@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/mail"
 	"time"
 
 	"github.com/firzatullahd/cats-social-api/internal/entity"
 	"github.com/firzatullahd/cats-social-api/internal/model"
+	error_envelope "github.com/firzatullahd/cats-social-api/internal/model/error"
 	"github.com/firzatullahd/cats-social-api/internal/utils/logger"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -17,7 +19,10 @@ import (
 func (u *Usecase) Register(ctx context.Context, in *model.RegisterRequest) (*model.AuthResponse, error) {
 	logCtx := fmt.Sprintf("%T.Login", u)
 	var err error
-	// validate payload
+
+	if err := validateRegister(in); err != nil {
+		return nil, err
+	}
 
 	// todo cost config
 	password, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
@@ -36,6 +41,17 @@ func (u *Usecase) Register(ctx context.Context, in *model.RegisterRequest) (*mod
 			tx.Rollback()
 		}
 	}()
+
+	checkUser, err := u.repo.FindUser(ctx, in.Email)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		logger.Error(ctx, logCtx, err)
+		return nil, err
+	}
+
+	if checkUser != nil {
+		return nil, error_envelope.ErrEmailExists
+	}
+
 	user := entity.User{
 		Email:    in.Email,
 		Password: string(password),
@@ -62,13 +78,30 @@ func (u *Usecase) Register(ctx context.Context, in *model.RegisterRequest) (*mod
 	}, nil
 }
 
+func validateRegister(in *model.RegisterRequest) error {
+	_, err := mail.ParseAddress(in.Email)
+	if err != nil {
+		return error_envelope.ErrValidation
+	}
+
+	if len(in.Name) < 5 || len(in.Name) > 50 {
+		return error_envelope.ErrValidation
+	}
+
+	if len(in.Password) < 5 || len(in.Password) > 15 {
+		return error_envelope.ErrValidation
+	}
+
+	return nil
+}
+
 func (u *Usecase) Login(ctx context.Context, in *model.LoginRequest) (*model.AuthResponse, error) {
 	logCtx := fmt.Sprintf("%T.Login", u)
 	user, err := u.repo.FindUser(ctx, in.Email)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("email/password salah")
+			return nil, error_envelope.ErrNotFound
 		}
 		return nil, err
 	}
@@ -76,7 +109,7 @@ func (u *Usecase) Login(ctx context.Context, in *model.LoginRequest) (*model.Aut
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(in.Password))
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
-		return nil, errors.New("email/password salah")
+		return nil, error_envelope.ErrWrongPass
 	}
 
 	accessToken, err := u.generateAccessToken(fmt.Sprintf("%v", user.ID))
