@@ -14,7 +14,7 @@ import (
 
 func Serve(conf *config.Config, h *handler.Handler) {
 	e := echo.New()
-	e.Pre(echoMiddleware.AddTrailingSlash())
+	e.Pre(echoMiddleware.RemoveTrailingSlash())
 	e.Use(echoMiddleware.Logger(), echoMiddleware.Recover())
 	e.Use(middleware.LogContext())
 
@@ -43,5 +43,5 @@ func Serve(conf *config.Config, h *handler.Handler) {
 }
 
 func hello(c echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
+	return c.String(http.StatusOK, "Welcome to cats social")
 }

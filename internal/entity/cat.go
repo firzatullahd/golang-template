@@ -2,29 +2,31 @@ package entity
 
 import "time"
 
-// todo remove json
 type Cat struct {
-	ID     string `json:"id" db:"id"`
-	UserID string `json:"user_id" db:"user_id"`
-	Name   string `json:"name" db:"name"`
+	ID     uint64 `db:"id"`
+	UserID uint64 `db:"user_id"`
+	Name   string `db:"name"`
 
-	ImageUrls [][]string
-	Sex       sexEnum
-	Race      raceEnum
+	Sex         SexEnum    `db:"sex"`
+	Race        RaceEnum   `db:"race"`
+	ImageUrls   [][]string `db:"image_urls"`
+	Age         uint64     `db:"age"`
+	Description string     `db:"description"`
+	HasMatched  bool       `db:"has_matched"`
 
-	CreatedAt time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at" db:"updated_at"`
-	DeletedAt *time.Time `json:"deleted_at" db:"deleted_at"`
+	CreatedAt time.Time  `db:"created_at"`
+	UpdatedAt time.Time  `db:"updated_at"`
+	DeletedAt *time.Time `db:"deleted_at"`
 }
 
-type sexEnum int
+type SexEnum int
 
 const (
-	SexMale sexEnum = iota + 1
+	SexMale SexEnum = iota + 1
 	SexFemale
 )
 
-func (e sexEnum) String() string {
+func (e SexEnum) String() string {
 	switch e {
 	case SexMale:
 		return "MALE"
@@ -35,10 +37,10 @@ func (e sexEnum) String() string {
 	}
 }
 
-type raceEnum int
+type RaceEnum int
 
 const (
-	RacePersian raceEnum = iota + 1
+	RacePersian RaceEnum = iota + 1
 	RaceMaineCoon
 	RaceSiamese
 	RaceRagdoll
@@ -50,7 +52,7 @@ const (
 	RaceBirman
 )
 
-func (e raceEnum) String() string {
+func (e RaceEnum) String() string {
 	switch e {
 	case RacePersian:
 		return "Persian"

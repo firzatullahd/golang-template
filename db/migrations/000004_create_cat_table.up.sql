@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS cat(
         image_urls text[] not null,
         sex cat_sex not null,
         race cat_race not null,
+        age int not null default 1,
+        description text not null,
+        has_matched boolean not null default false,
 
         created_at timestamptz NOT NULL DEFAULT now(),
         updated_at timestamptz NOT NULL DEFAULT now(),

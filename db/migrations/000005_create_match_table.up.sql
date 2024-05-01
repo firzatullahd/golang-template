@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS match(
          cat_id BIGINT NOT NULL,
          match_cat_id BIGINT NOT NULL,
          match_user_id BIGINT NOT NULL,
+         message text not null,
 
          is_approved boolean not null,
          is_rejected boolean not null,
