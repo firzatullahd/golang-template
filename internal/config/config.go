@@ -24,7 +24,7 @@ type DB struct {
 	MaxOpenCons    int  `mapstructure:"maxOpenCons"`
 	ConMaxIdleTime int  `mapstructure:"conMaxIdleTime"`
 	ConMaxLifetime int  `mapstructure:"conMaxLifeTime"`
-	replica        PSQL `mapstructure:"replica"`
+	Replica        PSQL `mapstructure:"replica"`
 	Master         PSQL `mapstructure:"master"`
 }
 
@@ -43,6 +43,7 @@ func (p PSQL) ConnectionString() string {
 		p.Host, strconv.Itoa(p.Port), p.User, p.Password, p.DBName, p.Schema, "disable")
 }
 
+// todo get from .env or env variable instead of yaml
 func Load() *Config {
 	v := viper.New()
 
@@ -70,12 +71,14 @@ func InitializeDB(conf *DB) (master *sqlx.DB, replica *sqlx.DB) {
 		log.Fatal(ctx, "Can't connect to master DB %+v", err)
 	}
 
+	log.Println("Successfully connect to master DB")
+
 	master.SetMaxIdleConns(conf.MaxIdleCons)
 	master.SetMaxOpenConns(conf.MaxOpenCons)
 	master.SetConnMaxLifetime(time.Duration(conf.ConMaxLifetime) * time.Millisecond)
 	master.SetConnMaxIdleTime(time.Duration(conf.ConMaxIdleTime) * time.Millisecond)
 
-	replica, err = sqlx.Connect("postgres", conf.replica.ConnectionString())
+	replica, err = sqlx.Connect("postgres", conf.Replica.ConnectionString())
 	if err != nil {
 		log.Fatal(ctx, "Can't connect to replica DB %+v", err)
 	}
@@ -84,6 +87,8 @@ func InitializeDB(conf *DB) (master *sqlx.DB, replica *sqlx.DB) {
 	replica.SetMaxOpenConns(conf.MaxOpenCons)
 	replica.SetConnMaxLifetime(time.Duration(conf.ConMaxLifetime) * time.Millisecond)
 	replica.SetConnMaxIdleTime(time.Duration(conf.ConMaxIdleTime) * time.Millisecond)
+
+	log.Println("Successfully connect to replica DB")
 
 	return
 }

@@ -10,7 +10,8 @@ import (
 
 type Irepository interface {
 	WithTransaction() (*sqlx.Tx, error)
-	CreateUser(ctx context.Context, tx *sqlx.Tx, in *entity.User) (int, error)
+	CreateUser(ctx context.Context, tx *sqlx.Tx, in *entity.User) (uint64, error)
+	FindUser(ctx context.Context, email string) (*entity.User, error)
 }
 
 type Usecase struct {
