@@ -15,3 +15,7 @@ func NewRepository(master, replica *sqlx.DB) *Repo {
 		dbRead: replica,
 	}
 }
+
+func (r *Repo) WithTransaction() (*sqlx.Tx, error) {
+	return r.db.Beginx()
+}
