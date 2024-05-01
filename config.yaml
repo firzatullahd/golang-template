@@ -1,0 +1,23 @@
+env: local
+name: cats-social-api
+port: '8050'
+database:
+  master:
+    dbName: postgres
+    host: localhost
+    password: root
+    port: 5432
+    schema: public
+    user: postgres
+  conMaxIdleTime: 30
+  conMaxLifeTime: 60
+  maxIdleCons: 20
+  maxOpenCons: 20
+  slave:
+    dbName: postgres
+    debug: true
+    host: localhost
+    password: root
+    port: 5432
+    schema: public
+    user: postgres
