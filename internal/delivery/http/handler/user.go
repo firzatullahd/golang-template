@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/firzatullahd/cats-social-api/internal/model"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func (h *Handler) Register(c echo.Context) error {

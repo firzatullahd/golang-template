@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS match(
          match_user_id BIGINT NOT NULL,
 
          is_approved boolean not null,
-         is_declined boolean not null,
+         is_rejected boolean not null,
 
          created_at timestamptz NOT NULL DEFAULT now(),
          updated_at timestamptz NOT NULL DEFAULT now(),

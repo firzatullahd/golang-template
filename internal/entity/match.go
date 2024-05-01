@@ -10,7 +10,7 @@ type Match struct {
 	MatchCatID  int    `db:"match_cat_id"`
 
 	IsApproved bool `db:"is_approved"`
-	IsDeclined bool `db:"is_declined"`
+	IsRejected bool `db:"is_rejected"`
 
 	CreatedAt time.Time  `db:"created_at"`
 	UpdatedAt time.Time  `db:"updated_at"`

@@ -3,10 +3,15 @@ module github.com/firzatullahd/cats-social-api
 go 1.21.5
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/labstack/echo v3.3.10+incompatible
 	github.com/lib/pq v1.10.9
 	github.com/spf13/viper v1.18.2
+)
+
+require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+	golang.org/x/time v0.5.0 // indirect
 )
 
 require (
