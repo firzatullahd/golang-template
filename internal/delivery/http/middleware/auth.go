@@ -11,7 +11,7 @@ import (
 	echo "github.com/labstack/echo/v4"
 )
 
-func Auth() echo.MiddlewareFunc {
+func (m *Middleware) Auth() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			accessToken := c.Request().Header.Get("Authorization")
@@ -21,7 +21,7 @@ func Auth() echo.MiddlewareFunc {
 
 			claims := model.MyClaim{}
 			token, err := jwt.ParseWithClaims(accessToken, &claims, func(token *jwt.Token) (interface{}, error) {
-				return model.JWT_SIGNATURE_KEY, nil
+				return []byte(m.JWTSecretKey), nil
 			})
 
 			if err != nil {

@@ -136,5 +136,5 @@ func (u *Usecase) generateAccessToken(userId uint64, email string) (string, erro
 		},
 	})
 
-	return token.SignedString(model.JWT_SIGNATURE_KEY)
+	return token.SignedString([]byte(u.conf.JWTSecretKey))
 }

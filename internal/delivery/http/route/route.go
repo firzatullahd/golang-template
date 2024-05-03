@@ -14,9 +14,10 @@ import (
 
 func Serve(conf *config.Config, h *handler.Handler) {
 	e := echo.New()
+	m := middleware.NewMiddleware(conf.JWTSecretKey)
 	e.Pre(echoMiddleware.RemoveTrailingSlash())
 	e.Use(echoMiddleware.Logger(), echoMiddleware.Recover())
-	e.Use(middleware.LogContext())
+	e.Use(m.LogContext())
 
 	e.GET("/", hello)
 
@@ -25,14 +26,14 @@ func Serve(conf *config.Config, h *handler.Handler) {
 	userApi.POST("/login", h.Login)
 
 	// todo
-	catApi := e.Group("/v1/cat", middleware.Auth())
+	catApi := e.Group("/v1/cat", m.Auth())
 	catApi.POST("/", h.Login)
 	catApi.GET("/", h.Login)
 	catApi.PUT("/:id", h.Login)
 	catApi.DELETE("/:id", h.Login)
 
 	// todo
-	matchApi := e.Group("/v1/match", middleware.Auth())
+	matchApi := e.Group("/v1/match", m.Auth())
 	matchApi.POST("/", h.Login)
 	matchApi.GET("/", h.Login)
 	matchApi.POST("/approve", h.Login)

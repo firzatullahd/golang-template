@@ -11,7 +11,7 @@ const (
 	CorrelationIDKey string = "Correlation-ID"
 )
 
-func LogContext() echo.MiddlewareFunc {
+func (m *Middleware) LogContext() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			ctx := context.WithValue(c.Request().Context(), CorrelationIDKey, uuid.New().String())
