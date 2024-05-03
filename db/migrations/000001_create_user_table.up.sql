@@ -7,3 +7,5 @@ CREATE TABLE IF NOT EXISTS users(
         updated_at timestamptz NOT NULL DEFAULT now(),
         deleted_at timestamptz DEFAULT NULL
 );
+
+create unique index if not exists idx_users_email on users(email); 

@@ -7,8 +7,14 @@ import (
 )
 
 type IUsecase interface {
+	// Auth
 	Register(ctx context.Context, in *model.RegisterRequest) (*model.AuthResponse, error)
 	Login(ctx context.Context, in *model.LoginRequest) (*model.AuthResponse, error)
+
+	// Manage Cat
+	CreateCat(ctx context.Context, in *model.CreateCatRequest, userId uint64) (*model.CreateCatResponse, error)
+	DeleteCat(ctx context.Context, catId, userId uint64) error
+	FindCat(ctx context.Context, in *model.FilterFindCat) error
 }
 
 type Handler struct {

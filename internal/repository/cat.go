@@ -6,6 +6,7 @@ import (
 
 	"github.com/firzatullahd/cats-social-api/internal/entity"
 	"github.com/firzatullahd/cats-social-api/internal/model"
+	error_envelope "github.com/firzatullahd/cats-social-api/internal/model/error"
 	"github.com/firzatullahd/cats-social-api/internal/utils/logger"
 	"github.com/jmoiron/sqlx"
 )
@@ -22,11 +23,11 @@ func (r *Repo) CreateCat(ctx context.Context, tx *sqlx.Tx, in *entity.Cat) (uint
 	return id, nil
 }
 
-func (r *Repo) FindCat(ctx context.Context, filter model.FilterFindCat) ([]entity.Cat, error) {
+func (r *Repo) FindCat(ctx context.Context, filter *model.FilterFindCat) ([]entity.Cat, error) {
 	logCtx := fmt.Sprintf("%T.FindCat", r)
 	// query := `select id, user_id, name, sex, race, image_urls, age, description, has_matched created_at, updated_at, deleted_at from cat`
 
-	query, args := buildQueryFindCat(filter)
+	query, args := buildQueryFindCat(*filter)
 
 	var cats []entity.Cat
 	rows, err := r.dbRead.QueryxContext(ctx, query, args...)
@@ -82,7 +83,7 @@ func buildQueryFindCat(filter model.FilterFindCat) (string, []interface{}) {
 		args = append(args, filter.Age)
 	}
 
-	if filter.Owned {
+	if filter.UserID > 0 {
 		query += `and user_id = ?`
 		args = append(args, filter.UserID)
 	}
@@ -95,12 +96,22 @@ func buildQueryFindCat(filter model.FilterFindCat) (string, []interface{}) {
 	return query, args
 }
 
-func (r *Repo) DeleteCat(ctx context.Context, tx *sqlx.Tx, id uint64) error {
+func (r *Repo) DeleteCat(ctx context.Context, tx *sqlx.Tx, catId, userId uint64) error {
 	logCtx := fmt.Sprintf("%T.DeleteCat", r)
-	_, err := tx.ExecContext(ctx, `update cat set deleted_at = now() where id = $1`, id)
+	res, err := tx.ExecContext(ctx, `update cat set deleted_at = now() where id = $1 and user_id = $2`, catId, userId)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		logger.Error(ctx, logCtx, err)
+		return err
+	}
+
+	if affected <= 0 {
+		return error_envelope.ErrNotFound
 	}
 
 	return nil
@@ -108,11 +119,22 @@ func (r *Repo) DeleteCat(ctx context.Context, tx *sqlx.Tx, id uint64) error {
 
 func (r *Repo) UpdateCat(ctx context.Context, tx *sqlx.Tx, in *entity.Cat) error {
 	logCtx := fmt.Sprintf("%T.UpdateCat", r)
-	query := `update cat set name = $2, sex = $3, race = $4, image_urls = $5, updated_at = now() where id = $1`
-	_, err := tx.ExecContext(ctx, query, in.ID, in.Name, in.Sex, in.Race, in.ImageUrls)
+	// todo partial update fields
+	query := `update cat set name = $3, sex = $4, race = $5, image_urls = $6, updated_at = now() where id = $1 and user_id = $2`
+	res, err := tx.ExecContext(ctx, query, in.ID, in.UserID, in.Name, in.Sex, in.Race, in.ImageUrls)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		logger.Error(ctx, logCtx, err)
+		return err
+	}
+
+	if affected <= 0 {
+		return error_envelope.ErrNotFound
 	}
 
 	return nil

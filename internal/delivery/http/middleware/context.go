@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	CorrelationIDKey string = "X-Correlation-ID"
+	CorrelationIDKey string = "Correlation-ID"
 )
 
 func LogContext() echo.MiddlewareFunc {

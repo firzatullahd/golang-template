@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/firzatullahd/cats-social-api/internal/model"
+	"github.com/firzatullahd/cats-social-api/internal/utils/constant"
 	"github.com/golang-jwt/jwt/v5"
 	echo "github.com/labstack/echo/v4"
 )
@@ -41,7 +42,7 @@ func Auth() echo.MiddlewareFunc {
 				return errors.New("token expired")
 			}
 
-			c.Set("user-id", claims.ID)
+			c.Set(constant.UserDataKey, claims.UserData)
 			return nil
 		}
 	}

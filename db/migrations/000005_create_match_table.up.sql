@@ -19,3 +19,5 @@ CREATE TABLE IF NOT EXISTS match(
         CONSTRAINT fk_cats_match2 foreign key(match_cat_id) references public.cat(id)
 
 );
+
+create index if not exists idx_match_user_id on match(user_id); 

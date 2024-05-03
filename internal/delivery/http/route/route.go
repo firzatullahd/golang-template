@@ -1,12 +1,12 @@
 package route
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/firzatullahd/cats-social-api/internal/config"
 	"github.com/firzatullahd/cats-social-api/internal/delivery/http/handler"
 	"github.com/firzatullahd/cats-social-api/internal/delivery/http/middleware"
+	"github.com/firzatullahd/cats-social-api/internal/utils/constant"
 
 	echo "github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
@@ -39,7 +39,7 @@ func Serve(conf *config.Config, h *handler.Handler) {
 	matchApi.POST("/reject", h.Login)
 	matchApi.DELETE("/:id", h.Login)
 
-	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", conf.Port)))
+	e.Logger.Fatal(e.Start(constant.AppPort))
 }
 
 func hello(c echo.Context) error {

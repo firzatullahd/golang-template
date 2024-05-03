@@ -1,92 +1,75 @@
 package config
 
 import (
-	"context"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
+	"github.com/firzatullahd/cats-social-api/internal/utils/constant"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Env  string `mapstructure:"env"`
-	Name string `mapstructure:"name"`
-	Port string `mapstructure:"port"`
-	DB   DB     `mapstructure:"database"`
+	*viper.Viper
+	DBName       string
+	Host         string
+	Password     string
+	Port         string
+	Schema       string
+	User         string
+	Params       string
+	BcryptSalt   string
+	JWTSecretKey string
 }
 
-type DB struct {
-	MaxIdleCons    int  `mapstructure:"maxIdleCons"`
-	MaxOpenCons    int  `mapstructure:"maxOpenCons"`
-	ConMaxIdleTime int  `mapstructure:"conMaxIdleTime"`
-	ConMaxLifetime int  `mapstructure:"conMaxLifeTime"`
-	Replica        PSQL `mapstructure:"replica"`
-	Master         PSQL `mapstructure:"master"`
-}
-
-type PSQL struct {
-	DBName   string `mapstructure:"dbName"`
-	Host     string `mapstructure:"host"`
-	Password string `mapstructure:"password"`
-	Port     int    `mapstructure:"port"`
-	Schema   string `mapstructure:"schema"`
-	User     string `mapstructure:"user"`
-	Debug    bool   `mapstructure:"debug"`
-}
-
-func (p PSQL) ConnectionString() string {
+func (p *Config) ConnectionString() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s search_path=%s sslmode=%s",
-		p.Host, strconv.Itoa(p.Port), p.User, p.Password, p.DBName, p.Schema, "disable")
+		p.Host, p.Port, p.User, p.Password, p.DBName, p.Schema, "disable")
 }
 
-// todo get from .env or env variable instead of yaml
 func Load() *Config {
 	v := viper.New()
+	v.AutomaticEnv()
 
-	v.SetConfigType("yaml")
-	v.AddConfigPath(".")
-	v.SetConfigName("config")
-
-	if err := v.ReadInConfig(); err != nil {
-		log.Panic("error read config")
+	return &Config{
+		Viper:        v,
+		DBName:       v.GetString("DB_NAME"),
+		Host:         v.GetString("DB_HOST"),
+		Password:     v.GetString("DB_PASSWORD"),
+		Port:         v.GetString("DB_PORT"),
+		Schema:       "public",
+		User:         v.GetString("DB_USERNAME"),
+		Params:       v.GetString("DB_PARAMS"),
+		JWTSecretKey: v.GetString("JWT_SECRET"),
+		BcryptSalt:   v.GetString("BCRYPT_SALT"),
 	}
-
-	conf := Config{}
-	if err := v.Unmarshal(&conf); err != nil {
-		log.Panic("error read config")
-	}
-
-	return &conf
 }
 
-func InitializeDB(conf *DB) (master *sqlx.DB, replica *sqlx.DB) {
+func (c *Config) InitializeDB() (master *sqlx.DB, replica *sqlx.DB) {
 	var err error
-	ctx := context.Background()
-	master, err = sqlx.Open("postgres", conf.Master.ConnectionString())
+	master, err = sqlx.Open("postgres", c.ConnectionString())
 	if err != nil {
-		log.Fatal(ctx, "Can't connect to master DB %+v", err)
+		log.Fatal("Can't connect to master DB", err)
 	}
 
 	log.Println("Successfully connect to master DB")
 
-	master.SetMaxIdleConns(conf.MaxIdleCons)
-	master.SetMaxOpenConns(conf.MaxOpenCons)
-	master.SetConnMaxLifetime(time.Duration(conf.ConMaxLifetime) * time.Millisecond)
-	master.SetConnMaxIdleTime(time.Duration(conf.ConMaxIdleTime) * time.Millisecond)
+	master.SetMaxIdleConns(constant.MaxIdleCons)
+	master.SetMaxOpenConns(constant.MaxOpenCons)
+	master.SetConnMaxLifetime(time.Duration(constant.ConMaxLifeTime) * time.Millisecond)
+	master.SetConnMaxIdleTime(time.Duration(constant.ConMaxIdleTime) * time.Millisecond)
 
-	replica, err = sqlx.Connect("postgres", conf.Replica.ConnectionString())
+	replica, err = sqlx.Connect("postgres", c.ConnectionString())
 	if err != nil {
-		log.Fatal(ctx, "Can't connect to replica DB %+v", err)
+		log.Fatal("Can't connect to replica DB", err)
 	}
 
-	replica.SetMaxIdleConns(conf.MaxIdleCons)
-	replica.SetMaxOpenConns(conf.MaxOpenCons)
-	replica.SetConnMaxLifetime(time.Duration(conf.ConMaxLifetime) * time.Millisecond)
-	replica.SetConnMaxIdleTime(time.Duration(conf.ConMaxIdleTime) * time.Millisecond)
+	replica.SetMaxIdleConns(constant.MaxIdleCons)
+	replica.SetMaxOpenConns(constant.MaxOpenCons)
+	replica.SetConnMaxLifetime(time.Duration(constant.ConMaxLifeTime) * time.Millisecond)
+	replica.SetConnMaxIdleTime(time.Duration(constant.ConMaxIdleTime) * time.Millisecond)
 
 	log.Println("Successfully connect to replica DB")
 

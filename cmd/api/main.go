@@ -13,9 +13,9 @@ import (
 
 func main() {
 	conf := config.Load()
-	fmt.Printf("%+v \n", conf)
-	masterDB, replicaDB := config.InitializeDB(&conf.DB)
 	logger.Init()
+	fmt.Printf("conf %+v /n", conf)
+	masterDB, replicaDB := conf.InitializeDB()
 
 	repo := repository.NewRepository(masterDB, replicaDB)
 	usecase := usecase.NewUsecase(conf, repo)

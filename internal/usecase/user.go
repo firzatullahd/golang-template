@@ -18,7 +18,6 @@ import (
 
 func (u *Usecase) Register(ctx context.Context, in *model.RegisterRequest) (*model.AuthResponse, error) {
 	logCtx := fmt.Sprintf("%T.Login", u)
-	var err error
 
 	if err := validateRegister(in); err != nil {
 		return nil, err
@@ -63,7 +62,7 @@ func (u *Usecase) Register(ctx context.Context, in *model.RegisterRequest) (*mod
 		return nil, err
 	}
 
-	accessToken, err := u.generateAccessToken(fmt.Sprintf("%v", userId))
+	accessToken, err := u.generateAccessToken(userId, in.Email)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return nil, err
@@ -112,7 +111,7 @@ func (u *Usecase) Login(ctx context.Context, in *model.LoginRequest) (*model.Aut
 		return nil, error_envelope.ErrWrongPass
 	}
 
-	accessToken, err := u.generateAccessToken(fmt.Sprintf("%v", user.ID))
+	accessToken, err := u.generateAccessToken(user.ID, in.Email)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return nil, err
@@ -126,9 +125,12 @@ func (u *Usecase) Login(ctx context.Context, in *model.LoginRequest) (*model.Aut
 
 }
 
-func (u *Usecase) generateAccessToken(userId string) (string, error) {
+func (u *Usecase) generateAccessToken(userId uint64, email string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, model.MyClaim{
-		ID: userId,
+		UserData: model.UserData{
+			ID:    userId,
+			Email: email,
+		},
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 8)),
 		},

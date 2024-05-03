@@ -16,3 +16,6 @@ CREATE TABLE IF NOT EXISTS cat(
 
         CONSTRAINT fk_users_cats foreign key(user_id) references public.users(id)
 );
+
+create index if not exists idx_cat_id on cat(id); 
+create index if not exists idx_cat_user_id on cat(user_id); 
