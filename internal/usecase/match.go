@@ -80,12 +80,12 @@ func (u *Usecase) CreateMatch(ctx context.Context, in *model.CreateMatchRequest)
 
 }
 
-func (u *Usecase) FindMatch(ctx context.Context, in *model.FilterFindMatch) ([]model.FindMatchResponse, error) {
+func (u *Usecase) FindMatch(ctx context.Context, userId uint64) ([]model.FindMatchResponse, error) {
 	logCtx := fmt.Sprintf("%T.FindMatch", u)
 	var err error
 
 	matches, err := u.repo.FindMatch(ctx, &model.FilterFindMatch{
-		UserId:          in.UserId,
+		UserId:          &userId,
 		PendingApproval: true,
 	})
 	if err != nil {
@@ -325,15 +325,15 @@ func (u *Usecase) ApproveMatch(ctx context.Context, matchId, userId uint64) erro
 		return err
 	}
 
-	go u.RemoveMatched(context.Background(), []uint64{match.MatchCatID, match.CatID})
+	go u.removeMatched(context.Background(), []uint64{match.MatchCatID, match.CatID})
 
 	tx.Commit()
 
 	return nil
 }
 
-func (u *Usecase) RemoveMatched(ctx context.Context, catIds []uint64) {
-	logCtx := fmt.Sprintf("%T.ApproveMatch", u)
+func (u *Usecase) removeMatched(ctx context.Context, catIds []uint64) {
+	logCtx := fmt.Sprintf("%T.removeMatched", u)
 	var err error
 
 	matches, err := u.repo.FindMatch(ctx, &model.FilterFindMatch{

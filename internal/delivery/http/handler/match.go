@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (h *Handler) CreateCat(c echo.Context) error {
+func (h *Handler) CreateMatch(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	data, ok := c.Get(constant.UserDataKey).(model.UserData)
@@ -18,21 +18,22 @@ func (h *Handler) CreateCat(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, model.ErrorResponse{Message: error_envelope.ErrUnauthorized.Error()})
 	}
 
-	var payload model.CreateCatRequest
+	var payload model.CreateMatchRequest
 	if err := c.Bind(&payload); err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: err.Error()})
 	}
 
-	resp, err := h.Usecase.CreateCat(ctx, &payload, data.ID)
+	payload.UserId = data.ID
+	err := h.Usecase.CreateMatch(ctx, &payload)
 	if err != nil {
 		code, errMsg := error_envelope.ParseError(err)
 		return c.JSON(code, model.ErrorResponse{Message: errMsg})
 	}
 
-	return c.JSON(http.StatusCreated, model.Response[*model.CreateCatResponse]{Data: resp, Message: "success"})
+	return c.JSON(http.StatusCreated, model.Response[*model.GeneralResponse]{Message: "success"})
 }
 
-func (h *Handler) DeleteCat(c echo.Context) error {
+func (h *Handler) DeleteMatch(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	data, ok := c.Get(constant.UserDataKey).(model.UserData)
@@ -41,21 +42,21 @@ func (h *Handler) DeleteCat(c echo.Context) error {
 	}
 
 	id := c.Param("id")
-	catId, err := strconv.ParseUint(id, 10, 64)
+	matchId, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: err.Error()})
 	}
 
-	err = h.Usecase.DeleteCat(ctx, catId, data.ID)
+	err = h.Usecase.DeleteMatch(ctx, matchId, data.ID)
 	if err != nil {
 		code, errMsg := error_envelope.ParseError(err)
 		return c.JSON(code, model.ErrorResponse{Message: errMsg})
 	}
 
-	return c.JSON(http.StatusCreated, model.Response[*model.GeneralResponse]{Message: "successfully delete cat"})
+	return c.JSON(http.StatusCreated, model.Response[*model.GeneralResponse]{Message: "successfully delete match"})
 }
 
-func (h *Handler) UpdateCat(c echo.Context) error {
+func (h *Handler) ApproveMatch(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	data, ok := c.Get(constant.UserDataKey).(model.UserData)
@@ -63,31 +64,21 @@ func (h *Handler) UpdateCat(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, model.ErrorResponse{Message: error_envelope.ErrUnauthorized.Error()})
 	}
 
-	id := c.Param("id")
-	catId, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: err.Error()})
-	}
-
-	var payload model.UpdateCatRequest
+	var payload model.UpdateMatchRequest
 	if err := c.Bind(&payload); err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: err.Error()})
 	}
 
-	payload.ID = catId
-	payload.UserID = data.ID
-
-	err = h.Usecase.UpdateCat(ctx, &payload)
+	err := h.Usecase.ApproveMatch(ctx, payload.MatchId, data.ID)
 	if err != nil {
 		code, errMsg := error_envelope.ParseError(err)
 		return c.JSON(code, model.ErrorResponse{Message: errMsg})
 	}
 
-	return c.JSON(http.StatusCreated, model.Response[*model.GeneralResponse]{Message: "successfully update cat"})
+	return c.JSON(http.StatusCreated, model.Response[*model.GeneralResponse]{Message: "successfully approve match"})
 }
 
-// todo
-func (h *Handler) FindCat(c echo.Context) error {
+func (h *Handler) RejectMatch(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	data, ok := c.Get(constant.UserDataKey).(model.UserData)
@@ -95,25 +86,38 @@ func (h *Handler) FindCat(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, model.ErrorResponse{Message: error_envelope.ErrUnauthorized.Error()})
 	}
 
-	id := c.Param("id")
-	catId, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: err.Error()})
-	}
-
-	var payload model.UpdateCatRequest
+	var payload model.UpdateMatchRequest
 	if err := c.Bind(&payload); err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: err.Error()})
 	}
 
-	payload.ID = catId
-	payload.UserID = data.ID
-
-	err = h.Usecase.UpdateCat(ctx, &payload)
+	err := h.Usecase.RejectMatch(ctx, payload.MatchId, data.ID)
 	if err != nil {
 		code, errMsg := error_envelope.ParseError(err)
 		return c.JSON(code, model.ErrorResponse{Message: errMsg})
 	}
 
-	return c.JSON(http.StatusCreated, model.Response[*model.GeneralResponse]{Message: "successfully update cat"})
+	return c.JSON(http.StatusCreated, model.Response[*model.GeneralResponse]{Message: "successfully reject match"})
+}
+
+func (h *Handler) FindMatch(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	data, ok := c.Get(constant.UserDataKey).(model.UserData)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, model.ErrorResponse{Message: error_envelope.ErrUnauthorized.Error()})
+	}
+
+	var payload model.UpdateMatchRequest
+	if err := c.Bind(&payload); err != nil {
+		return c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: err.Error()})
+	}
+
+	resp, err := h.Usecase.FindMatch(ctx, data.ID)
+	if err != nil {
+		code, errMsg := error_envelope.ParseError(err)
+		return c.JSON(code, model.ErrorResponse{Message: errMsg})
+	}
+
+	return c.JSON(http.StatusCreated, model.Response[[]model.FindMatchResponse]{Data: resp, Message: "successfully reject match"})
 }

@@ -25,20 +25,19 @@ func Serve(conf *config.Config, h *handler.Handler) {
 	userApi.POST("/register", h.Register)
 	userApi.POST("/login", h.Login)
 
-	// todo
 	catApi := e.Group("/v1/cat", m.Auth())
-	catApi.POST("/", h.Login)
-	catApi.GET("/", h.Login)
-	catApi.PUT("/:id", h.Login)
-	catApi.DELETE("/:id", h.Login)
+	catApi.POST("/", h.CreateCat)
+	catApi.GET("/", h.FindCat)
+	catApi.PUT("/:id", h.UpdateCat)
+	catApi.DELETE("/:id", h.DeleteCat)
 
 	// todo
 	matchApi := e.Group("/v1/match", m.Auth())
-	matchApi.POST("/", h.Login)
-	matchApi.GET("/", h.Login)
-	matchApi.POST("/approve", h.Login)
-	matchApi.POST("/reject", h.Login)
-	matchApi.DELETE("/:id", h.Login)
+	matchApi.POST("/", h.CreateMatch)
+	matchApi.GET("/", h.FindMatch)
+	matchApi.POST("/approve", h.ApproveMatch)
+	matchApi.POST("/reject", h.RejectMatch)
+	matchApi.DELETE("/:id", h.DeleteMatch)
 
 	e.Logger.Fatal(e.Start(constant.AppPort))
 }

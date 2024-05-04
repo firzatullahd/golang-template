@@ -23,8 +23,7 @@ func (u *Usecase) Register(ctx context.Context, in *model.RegisterRequest) (*mod
 		return nil, err
 	}
 
-	// todo cost config
-	password, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
+	password, err := bcrypt.GenerateFromPassword([]byte(in.Password), u.conf.BcryptSalt)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return nil, err

@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/firzatullahd/cats-social-api/internal/utils/constant"
@@ -20,7 +21,7 @@ type Config struct {
 	Schema       string
 	User         string
 	Params       string
-	BcryptSalt   string
+	BcryptSalt   int
 	JWTSecretKey string
 }
 
@@ -33,6 +34,10 @@ func Load() *Config {
 	v := viper.New()
 	v.AutomaticEnv()
 
+	salt, err := strconv.Atoi(v.GetString("BCRYPT_SALT"))
+	if err != nil {
+		log.Fatal("config error")
+	}
 	return &Config{
 		Viper:        v,
 		DBName:       v.GetString("DB_NAME"),
@@ -43,7 +48,7 @@ func Load() *Config {
 		User:         v.GetString("DB_USERNAME"),
 		Params:       v.GetString("DB_PARAMS"),
 		JWTSecretKey: v.GetString("JWT_SECRET"),
-		BcryptSalt:   v.GetString("BCRYPT_SALT"),
+		BcryptSalt:   salt,
 	}
 }
 

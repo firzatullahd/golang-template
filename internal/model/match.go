@@ -21,6 +21,10 @@ type (
 		Message    string `json:"message"`
 	}
 
+	UpdateMatchRequest struct {
+		MatchId uint64 `json:"matchId"`
+	}
+
 	FindMatchResponse struct {
 		ID             string          `json:"id"`
 		Message        string          `json:"message"`

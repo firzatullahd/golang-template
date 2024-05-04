@@ -16,3 +16,7 @@ type PageMetadata struct {
 type ErrorResponse struct {
 	Message string `json:"message"`
 }
+
+type GeneralResponse struct {
+	Message string `json:"message"`
+}
