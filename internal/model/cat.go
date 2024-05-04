@@ -45,6 +45,19 @@ type (
 		Description *string  `json:"description"`
 	}
 
+	FindCatRequest struct {
+		Limit      string
+		Offset     string
+		ID         string
+		Sex        string
+		Race       string
+		HasMatched string
+		Age        string
+		SearchName string
+		Owned      string
+		UserId     uint64
+	}
+
 	CreateCatResponse struct {
 		ID        string `json:"id"`
 		CreatedAt string `json:"createdAt"`

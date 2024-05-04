@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/firzatullahd/cats-social-api/internal/entity"
 	"github.com/firzatullahd/cats-social-api/internal/model"
@@ -225,11 +226,17 @@ func validateUpdateCat(in *model.UpdateCatRequest) (*model.InputUpdateCat, error
 	return nil, nil
 }
 
-func (u *Usecase) FindCat(ctx context.Context, in *model.FilterFindCat) ([]model.FindCatResponse, error) {
+func (u *Usecase) FindCat(ctx context.Context, in *model.FindCatRequest) ([]model.FindCatResponse, error) {
 	logCtx := fmt.Sprintf("%T.FindCat", u)
 	var err error
 
-	cats, err := u.repo.FindCat(ctx, in)
+	filter, err := parseFilterFindCat(in)
+	if err != nil {
+		logger.Error(ctx, logCtx, err)
+		return nil, error_envelope.ErrValidation
+	}
+
+	cats, err := u.repo.FindCat(ctx, filter)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return nil, err
@@ -251,4 +258,89 @@ func (u *Usecase) FindCat(ctx context.Context, in *model.FilterFindCat) ([]model
 	}
 
 	return resp, nil
+}
+
+func parseFilterFindCat(in *model.FindCatRequest) (*model.FilterFindCat, error) {
+	out := new(model.FilterFindCat)
+
+	limit, err := strconv.Atoi(in.Limit)
+	if err != nil {
+		return nil, err
+	}
+	out.Limit = limit
+
+	offset, err := strconv.Atoi(in.Offset)
+	if err != nil {
+		return nil, err
+	}
+	out.Offset = offset
+
+	if in.HasMatched != "" {
+		hasMatched, err := strconv.ParseBool(in.HasMatched)
+		if err != nil {
+			return nil, err
+		}
+
+		out.HasMatched = &hasMatched
+	}
+
+	if in.Owned != "" {
+		owned, err := strconv.ParseBool(in.Owned)
+		if err != nil {
+			return nil, err
+		}
+
+		if owned {
+			out.UserID = &in.UserId
+		}
+	}
+
+	if in.Sex != "" {
+		_, err := entity.StringToSex(in.Sex)
+		if err != nil {
+			return nil, err
+		}
+
+		out.Sex = &in.Sex
+	}
+
+	if in.Race != "" {
+		_, err := entity.StringToRace(in.Race)
+		if err != nil {
+			return nil, err
+		}
+
+		out.Race = &in.Race
+	}
+
+	if in.ID != "" {
+		id, err := strconv.ParseUint(in.ID, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		out.ID = []uint64{id}
+	}
+
+	if in.SearchName != "" {
+		out.SearchName = &in.SearchName
+	}
+
+	if in.Age != "" {
+		ok := false
+		allowed := []string{">4", "<4", "4"}
+		for _, v := range allowed {
+			if in.Age == v {
+				ok = true
+				break
+			}
+		}
+
+		if !ok {
+			return nil, error_envelope.ErrValidation
+		}
+
+		out.Age = &in.Age
+	}
+
+	return out, nil
 }

@@ -31,7 +31,6 @@ func Serve(conf *config.Config, h *handler.Handler) {
 	catApi.PUT("/:id", h.UpdateCat)
 	catApi.DELETE("/:id", h.DeleteCat)
 
-	// todo
 	matchApi := e.Group("/v1/match", m.Auth())
 	matchApi.POST("/", h.CreateMatch)
 	matchApi.GET("/", h.FindMatch)
