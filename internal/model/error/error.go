@@ -12,6 +12,7 @@ var (
 	ErrWrongPass    = fmt.Errorf("wrong password")
 	ErrUnknown      = fmt.Errorf("error unknown")
 	ErrUnauthorized = fmt.Errorf("unauthorized")
+	ErrSexEdit      = fmt.Errorf("sex is edited when cat is already requested to match")
 )
 
 var mapErrorCode = map[error]int{
@@ -21,6 +22,7 @@ var mapErrorCode = map[error]int{
 	ErrWrongPass:    http.StatusBadRequest,
 	ErrUnknown:      http.StatusInternalServerError,
 	ErrUnauthorized: http.StatusUnauthorized,
+	ErrSexEdit:      http.StatusBadRequest,
 }
 
 func ParseError(err error) (code int, errMsg string) {

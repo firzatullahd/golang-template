@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/firzatullahd/cats-social-api/internal/entity"
 	"github.com/firzatullahd/cats-social-api/internal/model"
@@ -25,12 +26,10 @@ func (r *Repo) CreateCat(ctx context.Context, tx *sqlx.Tx, in *entity.Cat) (uint
 
 func (r *Repo) FindCat(ctx context.Context, filter *model.FilterFindCat) ([]entity.Cat, error) {
 	logCtx := fmt.Sprintf("%T.FindCat", r)
-	// query := `select id, user_id, name, sex, race, image_urls, age, description, has_matched created_at, updated_at, deleted_at from cat`
-
-	query, args := buildQueryFindCat(*filter)
+	query, args := buildQueryFindCat(filter)
 
 	var cats []entity.Cat
-	rows, err := r.dbRead.QueryxContext(ctx, query, args...)
+	rows, err := r.dbRead.QueryxContext(ctx, query, args)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return nil, err
@@ -49,49 +48,52 @@ func (r *Repo) FindCat(ctx context.Context, filter *model.FilterFindCat) ([]enti
 
 	return cats, nil
 }
-func buildQueryFindCat(filter model.FilterFindCat) (string, []interface{}) {
-	query := `select id, user_id, name, sex, race, image_urls, age, description, has_matched created_at, updated_at, deleted_at from cat where 1=1`
+
+func buildQueryFindCat(filter *model.FilterFindCat) (string, map[string]interface{}) {
+	query := `select id, user_id, name, sex, race, image_urls, age, description, has_matched created_at, updated_at, deleted_at from cat where deleted_at isnull `
 
 	if filter.Limit == 0 {
 		filter.Limit = 5
 	}
 
-	args := []interface{}{}
+	args := make(map[string]interface{}, 0)
 
-	if filter.ID > 0 {
-		query += `and id = ?`
-		args = append(args, filter.ID)
+	if filter.ID != nil {
+		query += `and id = :id`
+		args["id"] = filter.ID
 	}
 
-	if filter.Sex != "" {
-		query += `and sex = ?`
-		args = append(args, filter.Sex)
+	if filter.Sex != nil {
+		query += `and sex = :sex`
+		args["sex"] = filter.Sex
 	}
 
-	if filter.Race != "" {
-		query += `and race = ?`
-		args = append(args, filter.Race)
+	if filter.Race != nil {
+		query += `and race = :race`
+		args["race"] = filter.Race
 	}
 
 	if filter.HasMatched != nil {
-		query += `and has_matched = ?`
-		args = append(args, filter.HasMatched)
+		query += `and has_matched = :has_matched`
+		args["has_matched"] = filter.HasMatched
 	}
 
-	if filter.Age > 0 {
-		query += `and age = ?`
-		args = append(args, filter.Age)
+	if filter.Age != nil {
+		query += `and age = :age`
+		args["age"] = filter.Age
 	}
 
-	if filter.UserID > 0 {
+	if filter.UserID != nil {
 		query += `and user_id = ?`
-		args = append(args, filter.UserID)
+		args["user_id"] = filter.Age
 	}
 
-	if filter.SearchName != "" {
-		query += `and name = ilike '%?%'`
-		args = append(args, filter.SearchName)
+	if filter.SearchName != nil {
+		query += `and name = ilike '%:search_name%'`
+		args["search_name"] = filter.SearchName
 	}
+
+	query += fmt.Sprintf(`limit %d offset %d`, filter.Limit, filter.Offset)
 
 	return query, args
 }
@@ -117,11 +119,10 @@ func (r *Repo) DeleteCat(ctx context.Context, tx *sqlx.Tx, catId, userId uint64)
 	return nil
 }
 
-func (r *Repo) UpdateCat(ctx context.Context, tx *sqlx.Tx, in *entity.Cat) error {
+func (r *Repo) UpdateCat(ctx context.Context, tx *sqlx.Tx, in *model.InputUpdateCat) error {
 	logCtx := fmt.Sprintf("%T.UpdateCat", r)
-	// todo partial update fields
-	query := `update cat set name = $3, sex = $4, race = $5, image_urls = $6, updated_at = now() where id = $1 and user_id = $2`
-	res, err := tx.ExecContext(ctx, query, in.ID, in.UserID, in.Name, in.Sex, in.Race, in.ImageUrls)
+	query, args := buildQueryUpdateCat(in)
+	res, err := tx.ExecContext(ctx, query, args)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return err
@@ -138,4 +139,45 @@ func (r *Repo) UpdateCat(ctx context.Context, tx *sqlx.Tx, in *entity.Cat) error
 	}
 
 	return nil
+}
+
+func buildQueryUpdateCat(in *model.InputUpdateCat) (string, map[string]interface{}) {
+	args := make(map[string]interface{}, 0)
+	var params []string
+	if in.Name != nil {
+		params = append(params, `name = :name`)
+		args["name"] = in.Name
+	}
+
+	if in.Sex != nil {
+		params = append(params, `sex = :sex`)
+		args["sex"] = in.Sex
+	}
+
+	if in.Race != nil {
+		params = append(params, `race = :race`)
+		args["race"] = in.Race
+	}
+
+	if in.ImageUrls != nil {
+		params = append(params, `image_urls = :image_urls`)
+		args["image_urls"] = in.ImageUrls
+	}
+
+	if in.Age != nil {
+		params = append(params, `age = :age`)
+		args["age"] = in.Age
+	}
+
+	if in.Description != nil {
+		params = append(params, `description = :desc`)
+		args["desc"] = in.Description
+	}
+
+	args["id"] = in.ID
+	args["user_id"] = in.UserID
+
+	query := fmt.Sprintf("update cat set %s where id = :id and user_id = :user_id", strings.Join(params, ","))
+
+	return query, args
 }

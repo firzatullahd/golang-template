@@ -24,7 +24,7 @@ func (r *Repo) CreateUser(ctx context.Context, tx *sqlx.Tx, in *entity.User) (ui
 func (r *Repo) FindUser(ctx context.Context, email string) (*entity.User, error) {
 	logCtx := fmt.Sprintf("%T.FindUser", r)
 	var user entity.User
-	err := r.dbRead.QueryRowxContext(ctx, `select id, email, password, name, created_at, updated_at, deleted_at from users where email = $1`, email).StructScan(&user)
+	err := r.dbRead.QueryRowxContext(ctx, `select id, email, password, name, created_at, updated_at, deleted_at from users where deleted_at isnull and email = $1`, email).StructScan(&user)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return nil, err

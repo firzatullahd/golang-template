@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS match(
          match_user_id BIGINT NOT NULL,
          message text not null,
 
-         is_approved boolean not null,
-         is_rejected boolean not null,
+         is_approved boolean not null default false,
+         is_rejected boolean not null default false,
 
          created_at timestamptz NOT NULL DEFAULT now(),
          updated_at timestamptz NOT NULL DEFAULT now(),
@@ -21,3 +21,4 @@ CREATE TABLE IF NOT EXISTS match(
 );
 
 create index if not exists idx_match_user_id on match(user_id); 
+create index if not exists idx_match_match_user_id on match(match_user_id); 

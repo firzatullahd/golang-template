@@ -2,3 +2,4 @@
 vendor
 *.yaml
 *.env
+secrets

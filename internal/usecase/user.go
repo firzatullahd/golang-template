@@ -42,7 +42,7 @@ func (u *Usecase) Register(ctx context.Context, in *model.RegisterRequest) (*mod
 	}()
 
 	checkUser, err := u.repo.FindUser(ctx, in.Email)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		logger.Error(ctx, logCtx, err)
 		return nil, err
 	}

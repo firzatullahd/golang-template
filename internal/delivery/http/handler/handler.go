@@ -14,7 +14,8 @@ type IUsecase interface {
 	// Manage Cat
 	CreateCat(ctx context.Context, in *model.CreateCatRequest, userId uint64) (*model.CreateCatResponse, error)
 	DeleteCat(ctx context.Context, catId, userId uint64) error
-	FindCat(ctx context.Context, in *model.FilterFindCat) error
+	FindCat(ctx context.Context, in *model.FilterFindCat) ([]model.FindCatResponse, error)
+	UpdateCat(ctx context.Context, in *model.UpdateCatRequest) error
 }
 
 type Handler struct {
