@@ -41,7 +41,7 @@ func (u *Usecase) Register(ctx context.Context, in *model.RegisterRequest) (*mod
 		}
 	}()
 
-	checkUser, err := u.repo.FindUser(ctx, in.Email)
+	checkUser, err := u.repo.FindUsers(ctx, &model.FilterFindUser{Email: &in.Email})
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		logger.Error(ctx, logCtx, err)
 		return nil, err
@@ -96,7 +96,9 @@ func validateRegister(in *model.RegisterRequest) error {
 
 func (u *Usecase) Login(ctx context.Context, in *model.LoginRequest) (*model.AuthResponse, error) {
 	logCtx := fmt.Sprintf("%T.Login", u)
-	user, err := u.repo.FindUser(ctx, in.Email)
+	users, err := u.repo.FindUsers(ctx, &model.FilterFindUser{
+		Email: &in.Email,
+	})
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -104,7 +106,7 @@ func (u *Usecase) Login(ctx context.Context, in *model.LoginRequest) (*model.Aut
 		}
 		return nil, err
 	}
-
+	user := users[0]
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(in.Password))
 	if err != nil {
 		logger.Error(ctx, logCtx, err)

@@ -15,4 +15,9 @@ type (
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
+
+	FilterFindUser struct {
+		Email *string
+		ID    []uint64
+	}
 )

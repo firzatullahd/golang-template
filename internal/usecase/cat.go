@@ -42,7 +42,7 @@ func (u *Usecase) CreateCat(ctx context.Context, in *model.CreateCatRequest, use
 	}
 	tx.Commit()
 
-	cats, err := u.repo.FindCat(ctx, &model.FilterFindCat{ID: &catId})
+	cats, err := u.repo.FindCat(ctx, &model.FilterFindCat{ID: []uint64{catId}})
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return nil, err
@@ -83,7 +83,7 @@ func validateRegisterCat(in *model.CreateCatRequest) (*entity.Cat, error) {
 		return nil, error_envelope.ErrValidation
 	}
 
-	if len(in.Description) <= 0 {
+	if len(in.Description) <= 1 || len(in.Description) > 200 {
 		return nil, error_envelope.ErrValidation
 	}
 
@@ -153,7 +153,7 @@ func (u *Usecase) UpdateCat(ctx context.Context, in *model.UpdateCatRequest) err
 
 	if updateInput.Sex != nil {
 		matches, err := u.repo.FindMatch(ctx, &model.FilterFindMatch{
-			CatId: &in.ID,
+			CatId: []uint64{in.ID},
 		})
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			logger.Error(ctx, logCtx, err)
@@ -183,6 +183,9 @@ func validateUpdateCat(in *model.UpdateCatRequest) (*model.InputUpdateCat, error
 	updateCat.UserID = in.UserID
 
 	if in.Name != nil {
+		if len(*in.Name) <= 1 || len(*in.Name) > 30 {
+			return nil, error_envelope.ErrValidation
+		}
 		updateCat.Name = in.Name
 	}
 
@@ -213,6 +216,9 @@ func validateUpdateCat(in *model.UpdateCatRequest) (*model.InputUpdateCat, error
 	}
 
 	if in.Description != nil {
+		if len(*in.Description) <= 1 || len(*in.Description) > 200 {
+			return nil, error_envelope.ErrValidation
+		}
 		updateCat.Description = in.Description
 	}
 
@@ -220,7 +226,7 @@ func validateUpdateCat(in *model.UpdateCatRequest) (*model.InputUpdateCat, error
 }
 
 func (u *Usecase) FindCat(ctx context.Context, in *model.FilterFindCat) ([]model.FindCatResponse, error) {
-	logCtx := fmt.Sprintf("%T.DeleteCat", u)
+	logCtx := fmt.Sprintf("%T.FindCat", u)
 	var err error
 
 	cats, err := u.repo.FindCat(ctx, in)

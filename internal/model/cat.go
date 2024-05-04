@@ -4,11 +4,11 @@ type (
 	FilterFindCat struct {
 		Limit      int
 		Offset     int
-		ID         *uint64
+		ID         []uint64
 		Sex        *string
 		Race       *string
 		HasMatched *bool
-		Age        *int
+		Age        *string
 		SearchName *string
 		UserID     *uint64
 	}
@@ -23,9 +23,7 @@ type (
 		Age         *uint64
 		Description *string
 	}
-)
 
-type (
 	CreateCatRequest struct {
 		UserID      uint64   `json:"-"`
 		Name        string   `json:"name"`

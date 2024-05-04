@@ -59,7 +59,7 @@ func buildQueryFindCat(filter *model.FilterFindCat) (string, map[string]interfac
 	args := make(map[string]interface{}, 0)
 
 	if filter.ID != nil {
-		query += `and id = :id`
+		query += `and id in (:id)`
 		args["id"] = filter.ID
 	}
 
@@ -79,13 +79,21 @@ func buildQueryFindCat(filter *model.FilterFindCat) (string, map[string]interfac
 	}
 
 	if filter.Age != nil {
-		query += `and age = :age`
+		switch *filter.Age {
+		case ">4":
+			query += `and age >= :age`
+		case "<4":
+			query += `and age <= :age`
+		case "4":
+			query += `and age = :age`
+		}
+
 		args["age"] = filter.Age
 	}
 
 	if filter.UserID != nil {
 		query += `and user_id = ?`
-		args["user_id"] = filter.Age
+		args["user_id"] = filter.UserID
 	}
 
 	if filter.SearchName != nil {

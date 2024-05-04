@@ -12,21 +12,20 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func (r *Repo) CreateMatch(ctx context.Context, tx *sqlx.Tx, in *entity.Match) (uint64, error) {
+func (r *Repo) CreateMatch(ctx context.Context, tx *sqlx.Tx, in *entity.Match) error {
 	logCtx := fmt.Sprintf("%T.CreateMatch", r)
-	var id uint64
-	err := tx.QueryRowxContext(ctx, `insert into match(user_id, cat_id, match_user_id, match_cat_id, message) values ($1, $2, $3, $4, $5) returning id`, in.UserID, in.CatID, in.MatchUserID, in.MatchCatID, in.Message).Scan(&id)
+	_, err := tx.ExecContext(ctx, `insert into match(user_id, cat_id, match_user_id, match_cat_id, message) values ($1, $2, $3, $4, $5) returning id`, in.UserID, in.CatID, in.MatchUserID, in.MatchCatID, in.Message)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
-		return 0, err
+		return err
 	}
 
-	return id, nil
+	return nil
 }
 
-func (r *Repo) DeleteMatch(ctx context.Context, tx *sqlx.Tx, id uint64) error {
+func (r *Repo) DeleteMatch(ctx context.Context, tx *sqlx.Tx, id []uint64) error {
 	logCtx := fmt.Sprintf("%T.CreateMatch", r)
-	_, err := tx.ExecContext(ctx, `update match set deleted_at = now() where id = $1`, id)
+	_, err := tx.ExecContext(ctx, `update match set deleted_at = now() where id in ($1)`, id)
 	if err != nil {
 		logger.Error(ctx, logCtx, err)
 		return err
@@ -110,16 +109,34 @@ func buildQueryFindMatch(filter *model.FilterFindMatch) (string, map[string]inte
 	args := make(map[string]interface{}, 0)
 	var params []string
 	if filter.CatId != nil {
-		params = append(params, `and cat_id = :cat_id or match_cat_id = :cat_id`)
+		params = append(params, `(cat_id in (:cat_id) or match_cat_id in (:cat_id))`)
 		args["cat_id"] = filter.CatId
 	}
 
 	if filter.UserId != nil {
-		params = append(params, `and user_id = :user_id or match_user_id = :user_id`)
+		params = append(params, `(user_id = :user_id or match_user_id = :user_id)`)
 		args["user_id"] = filter.UserId
 	}
 
-	query := fmt.Sprintf(`select id, user_id, cat_id, match_user_id, match_cat_id, is_approved, is_rejected, message, created_at, updated_at, deleted_at from match where deleted_at isnull and is_approved is false and is_rejected is false %s`, strings.Join(params, ""))
+	if len(filter.ID) > 0 {
+		params = append(params, `id in (:id)`)
+		args["id"] = filter.ID
+	}
+
+	if filter.Approval != nil {
+		if *filter.Approval {
+			params = append(params, `is_approved = :approved`)
+			args["approved"] = filter.Approval
+		} else {
+			params = append(params, `is_rejected = :rejected`)
+			args["rejected"] = filter.Approval
+		}
+	} else if filter.PendingApproval {
+		params = append(params, `is_approved = :false and is_rejected = :false`)
+		args["false"] = false
+	}
+
+	query := fmt.Sprintf(`select id, user_id, cat_id, match_user_id, match_cat_id, is_approved, is_rejected, message, created_at, updated_at, deleted_at from match where deleted_at isnull and %s`, strings.Join(params, "and"))
 
 	return query, args
 }
