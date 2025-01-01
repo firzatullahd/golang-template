@@ -1,7 +1,0 @@
-sudo ss -lptn 'sport = :5432'
-
-psql -h localhost -U admin -d postgres -W -c "create database example;"
-pass: S3cret
-
-migrate -database postgres://admin:S3cret@localhost:5432/postgres?sslmode=disable -path db/migrations up
-

@@ -1,5 +1,0 @@
-BEGIN;
-
-DROP TYPE cat_race;
-
-COMMIT;

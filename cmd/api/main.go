@@ -1,24 +1,36 @@
 package main
 
 import (
-	"fmt"
+	"context"
 
-	"github.com/firzatullahd/cats-social-api/internal/config"
-	"github.com/firzatullahd/cats-social-api/internal/delivery/http/handler"
-	"github.com/firzatullahd/cats-social-api/internal/delivery/http/route"
-	"github.com/firzatullahd/cats-social-api/internal/repository"
-	"github.com/firzatullahd/cats-social-api/internal/usecase"
-	"github.com/firzatullahd/cats-social-api/internal/utils/logger"
+	"github.com/firzatullahd/golang-template/config"
+	"github.com/firzatullahd/golang-template/internal/user/delivery/http/handler"
+	"github.com/firzatullahd/golang-template/internal/user/delivery/http/route"
+	"github.com/firzatullahd/golang-template/internal/user/repository"
+	"github.com/firzatullahd/golang-template/internal/user/service"
+	"github.com/firzatullahd/golang-template/utils/logger"
 )
 
 func main() {
 	conf := config.Load()
-	logger.Init()
-	fmt.Printf("conf %+v /n", conf)
-	masterDB, replicaDB := conf.InitializeDB()
+	logger.NewLogger(conf.AppEnv)
 
-	repo := repository.NewRepository(masterDB, replicaDB)
-	usecase := usecase.NewUsecase(conf, repo)
-	handler := handler.NewHandler(usecase)
+	connDB, err := config.NewPsqlClient(conf)
+	if err != nil {
+		logger.Log.Fatal(err.Error())
+	}
+
+	redisConn, err := config.NewRedisClient(context.Background(), conf)
+	if err != nil {
+		logger.Log.Fatal(err.Error())
+	}
+
+	var userService service.Service
+	{
+		repo := repository.NewRepository(connDB, connDB)
+		userService = service.NewService(conf, repo, redisConn)
+	}
+
+	handler := handler.NewHandler(&userService)
 	route.Serve(conf, handler)
 }

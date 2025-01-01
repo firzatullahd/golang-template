@@ -1,5 +1,4 @@
 .idea
 vendor
-*.yaml
 *.env
 secrets

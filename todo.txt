@@ -1,0 +1,11 @@
+1. register [v]
+2. login [v]
+3. redis conn [v]
+4. send verification sendgrid api & set redis otp
+  4a. set redis otp
+  4b. send email with sendgrid
+5. verification otp
+6. verication id card & id card no use storage db
+7. logger fix
+8. unit test
+
