@@ -43,7 +43,6 @@ func (s UserState) String() string {
 	default:
 		return ""
 	}
-
 }
 
 func (s *UserState) UnmarshalJSON(data []byte) error {

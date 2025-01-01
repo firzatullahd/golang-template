@@ -2,11 +2,15 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"errors"
+	"fmt"
+	"math/big"
 	"net/mail"
 	"time"
 
+	"github.com/firzatullahd/golang-template/internal/user/entity"
 	"github.com/firzatullahd/golang-template/internal/user/entity/converter"
 	"github.com/firzatullahd/golang-template/internal/user/model"
 	customerror "github.com/firzatullahd/golang-template/internal/user/model/error"
@@ -61,13 +65,11 @@ func (s *Service) Register(ctx context.Context, in model.RegisterRequest) (*mode
 		return nil, err
 	}
 
-	tx.Commit()
-
 	return &model.RegisterResponse{
 		Username:    in.Username,
 		Name:        in.Name,
 		AccessToken: accessToken,
-	}, nil
+	}, tx.Commit()
 }
 
 func validateRegister(in *model.RegisterRequest) error {
@@ -119,11 +121,11 @@ func (s *Service) Login(ctx context.Context, in model.AuthRequest) (*model.AuthR
 
 }
 
-func (s *Service) generateAccessToken(userId uint64, email string) (string, error) {
+func (s *Service) generateAccessToken(userId uint64, username string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, model.MyClaim{
 		UserData: model.UserData{
 			UserID:   userId,
-			Username: email,
+			Username: username,
 		},
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 8)),
@@ -131,4 +133,66 @@ func (s *Service) generateAccessToken(userId uint64, email string) (string, erro
 	})
 
 	return token.SignedString([]byte(s.conf.JWTSecretKey))
+}
+
+func (s *Service) InitialVerification(ctx context.Context, username string) error {
+
+	user, err := s.repo.FindUser(ctx, &model.FilterFindUser{
+		Username: &username,
+	})
+	if err != nil {
+		return err
+	}
+
+	switch user.State {
+	case entity.UserStateVerified:
+		return customerror.ErrAlreadyVerified
+	case entity.UserStateDeleted:
+		return customerror.ErrNotFound
+	}
+
+	verificationCode, err := generateVerificationCode()
+	if err != nil {
+		return err
+	}
+
+	if err := s.redisConn.Set(ctx, fmt.Sprintf(model.VerificationPrefix, username), verificationCode, model.VerificationTTL).Err(); err != nil {
+		return err
+	}
+
+	// TODO: send email verification
+
+	tx, err := s.repo.WithTransaction()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := s.repo.UpdateUser(ctx, tx, user.ID, map[string]interface{}{
+		"state": entity.UserStatePending,
+	}); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func generateVerificationCode() (string, error) {
+	const min, max = 100000, 999999
+
+	rangeSize := max - min + 1
+
+	num, err := rand.Int(rand.Reader, big.NewInt(int64(rangeSize)))
+	if err != nil {
+		return "", err
+	}
+
+	otp := int(num.Int64()) + min
+
+	return fmt.Sprintf("%06d", otp), nil
 }

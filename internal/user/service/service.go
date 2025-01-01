@@ -16,6 +16,7 @@ type Irepository interface {
 	CreateUser(ctx context.Context, tx *sqlx.Tx, in entity.User) (uint64, error)
 	FindUsers(ctx context.Context, in *model.FilterFindUser) ([]entity.User, error)
 	FindUser(ctx context.Context, in *model.FilterFindUser) (*entity.User, error)
+	UpdateUser(ctx context.Context, tx *sqlx.Tx, userID uint64, in map[string]any) error
 }
 
 type Service struct {

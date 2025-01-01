@@ -2,7 +2,7 @@
 2. login [v]
 3. redis conn [v]
 4. send verification sendgrid api & set redis otp
-  4a. set redis otp
+  4a. set redis otp [v]
   4b. send email with sendgrid
 5. verification otp
 6. verication id card & id card no use storage db

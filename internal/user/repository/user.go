@@ -2,10 +2,12 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/firzatullahd/golang-template/internal/user/entity"
 	"github.com/firzatullahd/golang-template/internal/user/model"
+	customerror "github.com/firzatullahd/golang-template/internal/user/model/error"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -86,4 +88,33 @@ func (r *Repo) FindUser(ctx context.Context, in *model.FilterFindUser) (*entity.
 	}
 
 	return &user, nil
+}
+
+func (r *Repo) UpdateUser(ctx context.Context, tx *sqlx.Tx, userID uint64, in map[string]any) error {
+	// logCtx := fmt.Sprintf("%T.UpdateUser", r)
+
+	in["updated_at"] = time.Now()
+
+	sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+	query, args, err := sq.Update("users").SetMap(in).Where(squirrel.Eq{"id": userID}).ToSql()
+	if err != nil {
+		return err
+	}
+
+	res, err := tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		// logger.Error(ctx, logCtx, err)
+		return err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return customerror.ErrNoResourceUpdated
+	}
+
+	return nil
 }

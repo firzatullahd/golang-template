@@ -1,5 +1,10 @@
 package model
 
+import "time"
+
+var VerificationPrefix = `verification:%s`
+var VerificationTTL = 5 * time.Minute
+
 type RegisterRequest struct {
 	Username string `json:"username"`
 	Name     string `json:"name"`
