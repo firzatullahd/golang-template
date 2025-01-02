@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/firzatullahd/golang-template/config"
+	"github.com/firzatullahd/golang-template/internal/user/adapter/mailersend"
 	"github.com/firzatullahd/golang-template/internal/user/delivery/http/handler"
 	"github.com/firzatullahd/golang-template/internal/user/delivery/http/route"
 	"github.com/firzatullahd/golang-template/internal/user/repository"
@@ -27,8 +28,9 @@ func main() {
 
 	var userService service.Service
 	{
+		emailClient := mailersend.NewClient(conf.MailerSendAPIKey)
 		repo := repository.NewRepository(connDB, connDB)
-		userService = service.NewService(conf, repo, redisConn)
+		userService = service.NewService(conf, repo, redisConn, emailClient)
 	}
 
 	handler := handler.NewHandler(&userService)

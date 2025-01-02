@@ -144,6 +144,15 @@ func (s *Service) InitialVerification(ctx context.Context, username string) erro
 		return err
 	}
 
+	allowed, err := s.allowInitialVerification(ctx, username)
+	if err != nil {
+		return err
+	}
+
+	if !allowed {
+		return customerror.ErrTooManyRequests
+	}
+
 	switch user.State {
 	case entity.UserStateVerified:
 		return customerror.ErrAlreadyVerified
@@ -151,7 +160,7 @@ func (s *Service) InitialVerification(ctx context.Context, username string) erro
 		return customerror.ErrNotFound
 	}
 
-	verificationCode, err := generateVerificationCode()
+	verificationCode, err := s.generateVerificationCode()
 	if err != nil {
 		return err
 	}
@@ -182,7 +191,7 @@ func (s *Service) InitialVerification(ctx context.Context, username string) erro
 	return tx.Commit()
 }
 
-func generateVerificationCode() (string, error) {
+func (s *Service) generateVerificationCode() (string, error) {
 	const min, max = 100000, 999999
 
 	rangeSize := max - min + 1
@@ -195,4 +204,23 @@ func generateVerificationCode() (string, error) {
 	otp := int(num.Int64()) + min
 
 	return fmt.Sprintf("%06d", otp), nil
+}
+
+func (s *Service) allowInitialVerification(ctx context.Context, username string) (bool, error) {
+	val, err := s.redisConn.Get(ctx, fmt.Sprintf(model.VerificationCounterPrefix, username)).Int()
+	if err != nil {
+		return false, err
+	}
+
+	if val == 0 {
+		// set initial counter
+		return true, s.redisConn.Set(ctx, fmt.Sprintf(model.VerificationCounterPrefix, username), 1, s.time.UntilMidnight()).Err()
+	}
+
+	if val >= model.VerificationMaxAttempt {
+		return false, customerror.ErrTooManyRequests
+	}
+
+	// increment counter
+	return true, s.redisConn.Incr(ctx, fmt.Sprintf(model.VerificationCounterPrefix, username)).Err()
 }

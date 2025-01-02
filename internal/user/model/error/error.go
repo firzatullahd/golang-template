@@ -14,6 +14,7 @@ var (
 	ErrUnauthorized      = fmt.Errorf("unauthorized")
 	ErrAlreadyVerified   = fmt.Errorf("user already verified")
 	ErrNoResourceUpdated = fmt.Errorf("no resource updated")
+	ErrTooManyRequests   = fmt.Errorf("too many requests")
 )
 
 var mapErrorCode = map[error]int{
@@ -24,6 +25,7 @@ var mapErrorCode = map[error]int{
 	ErrUnknown:         http.StatusInternalServerError,
 	ErrUnauthorized:    http.StatusUnauthorized,
 	ErrAlreadyVerified: http.StatusConflict,
+	ErrTooManyRequests: http.StatusTooManyRequests,
 }
 
 func ParseError(err error) (code int, err2 error) {

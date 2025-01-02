@@ -8,18 +8,19 @@ import (
 )
 
 type Config struct {
-	AppName       string `mapstructure:"APP_NAME"`
-	AppEnv        string `mapstructure:"APP_ENV"`
-	AppPort       string `mapstructure:"APP_PORT"`
-	JWTSecretKey  string `mapstructure:"JWT_SECRET_KEY"`
-	DBName        string `mapstructure:"DB_NAME"`
-	DBHost        string `mapstructure:"DB_HOST"`
-	DBPort        string `mapstructure:"DB_PORT"`
-	DBUsername    string `mapstructure:"DB_USERNAME"`
-	DBPassword    string `mapstructure:"DB_PASSWORD"`
-	RedisAddress  string `mapstructure:"REDIS_ADDRESS"`
-	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
-	RedisDB       int    `mapstructure:"REDIS_DB"`
+	AppName          string `mapstructure:"APP_NAME"`
+	AppEnv           string `mapstructure:"APP_ENV"`
+	AppPort          string `mapstructure:"APP_PORT"`
+	JWTSecretKey     string `mapstructure:"JWT_SECRET_KEY"`
+	DBName           string `mapstructure:"DB_NAME"`
+	DBHost           string `mapstructure:"DB_HOST"`
+	DBPort           string `mapstructure:"DB_PORT"`
+	DBUsername       string `mapstructure:"DB_USERNAME"`
+	DBPassword       string `mapstructure:"DB_PASSWORD"`
+	RedisAddress     string `mapstructure:"REDIS_ADDRESS"`
+	RedisPassword    string `mapstructure:"REDIS_PASSWORD"`
+	RedisDB          int    `mapstructure:"REDIS_DB"`
+	MailerSendAPIKey string `mapstructure:"MAILERSEND_API_KEY"`
 }
 
 func Load() *Config {

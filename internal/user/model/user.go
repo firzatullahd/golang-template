@@ -2,8 +2,10 @@ package model
 
 import "time"
 
+var VerificationCounterPrefix = `verification:counter:%s`
 var VerificationPrefix = `verification:%s`
-var VerificationTTL = 5 * time.Minute
+var VerificationTTL = 30 * time.Minute
+var VerificationMaxAttempt = 3
 
 type RegisterRequest struct {
 	Username string `json:"username"`
@@ -32,4 +34,10 @@ type AuthRequest struct {
 type FilterFindUser struct {
 	Username *string
 	ID       []uint64
+}
+
+type EmailPayload struct {
+	Email            string
+	Name             string
+	VerificationCode string
 }
