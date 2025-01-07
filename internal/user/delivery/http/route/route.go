@@ -23,8 +23,8 @@ func Serve(conf *config.Config, h *handler.Handler) {
 	userApi := e.Group("/v1/user")
 	userApi.POST("/register", h.Register)
 	userApi.POST("/login", h.Login)
-	// otp - need redis
-	// verification - need storage db
+	userApi.POST("/verification/:username", h.InitialVerification)
+	userApi.POST("/verify/:username/:code", h.Verify)
 
 	_ = e.Group("/v1/", m.Auth())
 

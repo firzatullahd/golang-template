@@ -37,3 +37,28 @@ func (h *Handler) Login(c echo.Context) error {
 
 	return response.SuccessResponse(c, http.StatusOK, resp, nil)
 }
+
+func (h *Handler) InitialVerification(c echo.Context) error {
+	ctx := c.Request().Context()
+	username := c.Param("username")
+	err := h.Service.InitialVerification(ctx, username)
+	if err != nil {
+		code, err := customerror.ParseError(err)
+		return response.ErrorResponse(c, code, err)
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, nil, nil)
+}
+
+func (h *Handler) Verify(c echo.Context) error {
+	ctx := c.Request().Context()
+	username := c.Param("username")
+	code := c.Param("code")
+	err := h.Service.Verify(ctx, username, code)
+	if err != nil {
+		code, err := customerror.ParseError(err)
+		return response.ErrorResponse(c, code, err)
+	}
+
+	return response.SuccessResponse(c, http.StatusOK, nil, nil)
+}

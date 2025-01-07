@@ -5,11 +5,14 @@
   4a. set redis otp [v]
   4b. send email with mailersend [v]
   4c. limit send email 3x [v]
-  4d. counter to decline request after 1000x with flag, this to ensure we dont need to pay mailersend
+  4d. counter to decline request after 1000x per day/month with flag, this to ensure we dont need to pay mailersend
   4d. create template email [v]
   4f. handle if error 402 payment required
-5. verification otp
+5. verification otp [v]
 6. verication id card & id card no use storage db
 7. logger fix
 8. unit test
+9. huge refactor? interface segregation? redo unit test
+10.containerized app
+
 

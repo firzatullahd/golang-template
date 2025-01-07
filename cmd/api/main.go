@@ -28,7 +28,7 @@ func main() {
 
 	var userService service.Service
 	{
-		emailClient := mailersend.NewClient(conf.MailerSendAPIKey)
+		emailClient := mailersend.NewClient(conf.MailerSendAPIKey, conf.EmailFrom, conf.EmailTemplateOTP)
 		repo := repository.NewRepository(connDB, connDB)
 		userService = service.NewService(conf, repo, redisConn, emailClient)
 	}

@@ -10,13 +10,15 @@ import (
 )
 
 type Client struct {
-	APIKey           string
+	templateOTP      string
+	emailfrom        string
 	mailersendClient *mailersendSDK.Mailersend
 }
 
-func NewClient(apiKey string) *Client {
+func NewClient(apiKey, emailfrom, templateOtp string) *Client {
 	return &Client{
-		APIKey:           apiKey,
+		templateOTP:      templateOtp,
+		emailfrom:        emailfrom,
 		mailersendClient: mailersendSDK.NewMailersend(apiKey),
 	}
 }
@@ -27,8 +29,8 @@ func (c *Client) SendEmail(ctx context.Context, input model.EmailPayload) error 
 
 	subject := "OTP"
 	from := mailersendSDK.From{
-		Name:  "Company Name",
-		Email: "Company Email",
+		Name:  c.emailfrom,
+		Email: "Firza Playground",
 	}
 
 	recipients := []mailersendSDK.Recipient{
@@ -52,7 +54,7 @@ func (c *Client) SendEmail(ctx context.Context, input model.EmailPayload) error 
 	message.SetFrom(from)
 	message.SetRecipients(recipients)
 	message.SetSubject(subject)
-	message.SetTemplateID("template-id")
+	message.SetTemplateID(c.templateOTP)
 	message.SetPersonalization(variables)
 
 	resp, err := c.mailersendClient.Email.Send(ctx, message)

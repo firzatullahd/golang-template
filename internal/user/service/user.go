@@ -65,11 +65,15 @@ func (s *Service) Register(ctx context.Context, in model.RegisterRequest) (*mode
 		return nil, err
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
 	return &model.RegisterResponse{
 		Username:    in.Username,
 		Name:        in.Name,
 		AccessToken: accessToken,
-	}, tx.Commit()
+	}, nil
 }
 
 func validateRegister(in *model.RegisterRequest) error {
@@ -169,8 +173,6 @@ func (s *Service) InitialVerification(ctx context.Context, username string) erro
 		return err
 	}
 
-	// TODO: send email verification
-
 	tx, err := s.repo.WithTransaction()
 	if err != nil {
 		return err
@@ -188,7 +190,19 @@ func (s *Service) InitialVerification(ctx context.Context, username string) erro
 		return err
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	if err := s.emailClient.SendEmail(ctx, model.EmailPayload{
+		Email:            username,
+		Name:             user.Name,
+		VerificationCode: verificationCode,
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Service) generateVerificationCode() (string, error) {
@@ -223,4 +237,22 @@ func (s *Service) allowInitialVerification(ctx context.Context, username string)
 
 	// increment counter
 	return true, s.redisConn.Incr(ctx, fmt.Sprintf(model.VerificationCounterPrefix, username)).Err()
+}
+
+func (s *Service) Verify(ctx context.Context, username, code string) error {
+
+	val, err := s.redisConn.Get(ctx, fmt.Sprintf(model.VerificationPrefix, username)).Result()
+	if err != nil {
+		return err
+	}
+
+	if val != code {
+		return customerror.ErrInvalidVerificationCode
+	}
+
+	return nil
+}
+
+func (s *Service) DoKyc(ctx context.Context) {
+
 }

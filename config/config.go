@@ -21,6 +21,8 @@ type Config struct {
 	RedisPassword    string `mapstructure:"REDIS_PASSWORD"`
 	RedisDB          int    `mapstructure:"REDIS_DB"`
 	MailerSendAPIKey string `mapstructure:"MAILERSEND_API_KEY"`
+	EmailTemplateOTP string `mapstructure:"EMAIL_TEMPLATE_OTP"`
+	EmailFrom        string `mapstructure:"EMAIL_FROM"`
 }
 
 func Load() *Config {
