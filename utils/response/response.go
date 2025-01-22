@@ -1,8 +1,6 @@
 package response
 
 import (
-	"strconv"
-
 	echo "github.com/labstack/echo/v4"
 )
 
@@ -15,7 +13,7 @@ type (
 		Error      *Error      `json:"error,omitempty"`
 	}
 	Error struct {
-		Code   string        `json:"code"`
+		Code   int           `json:"code"`
 		Errors []interface{} `json:"details,omitempty"`
 	}
 	Pagination struct {
@@ -36,20 +34,8 @@ func SuccessResponse(c echo.Context, statusCode int, data interface{}, paginatio
 }
 
 func ErrorResponse(c echo.Context, statusCode int, err error, details ...interface{}) error {
-	var (
-		message = err.Error()
-	)
-
-	// ctx := e.Request().Context()
-	resp := Response{
+	return c.JSON(statusCode, Response{
 		StatusCode: statusCode,
-		Message:    message,
-		Error: &Error{
-			Code:   strconv.Itoa(statusCode),
-			Errors: details,
-		},
-	}
-	// log.Error(ctx, "got response with error", log.Any("response", resp), log.Any("error", *resp.Error))
-
-	return c.JSON(statusCode, resp)
+		Message:    err.Error(),
+	})
 }

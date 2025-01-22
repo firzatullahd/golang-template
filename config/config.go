@@ -39,9 +39,7 @@ func Load() *Config {
 		log.Fatal("Environment can't be loaded: ", err)
 	}
 
-	if conf.AppEnv == "development" {
-		log.Println("The App is running in development env")
-	}
+	log.Printf("The App is running in %s env \n", conf.AppEnv)
 
 	return &conf
 }

@@ -15,7 +15,7 @@ func Serve(conf *config.Config, h *handler.Handler) {
 	e := echo.New()
 	m := middleware.NewMiddleware(conf.JWTSecretKey)
 	e.Pre(echoMiddleware.RemoveTrailingSlash())
-	// e.Use(echoMiddleware.Logger(), echoMiddleware.Recover())
+	e.Use(echoMiddleware.Logger(), echoMiddleware.Recover())
 	e.Use(m.LogContext())
 
 	e.GET("/health", HealthCheck)

@@ -10,7 +10,6 @@ CREATE TABLE public.users (
   id_card_file text,
 	created_at timestamptz DEFAULT now() NOT NULL,
 	updated_at timestamptz DEFAULT now() NOT NULL,
-	CONSTRAINT users_name_key UNIQUE (name),
 	CONSTRAINT users_pk PRIMARY KEY (id),
 	CONSTRAINT users_username_unique UNIQUE (username)
 );

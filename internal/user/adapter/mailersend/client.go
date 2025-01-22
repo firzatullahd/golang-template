@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/firzatullahd/golang-template/internal/user/model"
+	"github.com/firzatullahd/golang-template/utils/logger"
 	mailersendSDK "github.com/mailersend/mailersend-go"
 )
 
@@ -59,10 +60,10 @@ func (c *Client) SendEmail(ctx context.Context, input model.EmailPayload) error 
 
 	resp, err := c.mailersendClient.Email.Send(ctx, message)
 	if err != nil {
-		return err
+		return fmt.Errorf("Send Email failed %w", err)
 	}
 
-	fmt.Println("Email sent successfully", resp.Header.Get("X-Message-Id"))
+	logger.Log.Info("Email sent successfully", resp.Header.Get("X-Message-Id"))
 
 	return nil
 }

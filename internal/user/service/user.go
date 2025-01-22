@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/mail"
+	"strings"
 	"time"
 
 	"github.com/firzatullahd/golang-template/internal/user/entity"
@@ -15,25 +16,24 @@ import (
 	"github.com/firzatullahd/golang-template/internal/user/model"
 	customerror "github.com/firzatullahd/golang-template/internal/user/model/error"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func (s *Service) Register(ctx context.Context, in model.RegisterRequest) (*model.RegisterResponse, error) {
-	// logCtx := fmt.Sprintf("%T.Register", u)
+	logCtx := fmt.Sprintf("%T.Register", s)
 
 	if err := validateRegister(&in); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s %w", logCtx, err)
 	}
 
 	password, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	if err != nil {
-		// logger.
-		return nil, err
+		return nil, fmt.Errorf("%s %w", logCtx, err)
 	}
 	tx, err := s.repo.WithTransaction()
 	if err != nil {
-		// logger.Error(ctx, logCtx, err)
-		return nil, err
+		return nil, fmt.Errorf("%s %w", logCtx, err)
 	}
 
 	defer func() {
@@ -42,37 +42,31 @@ func (s *Service) Register(ctx context.Context, in model.RegisterRequest) (*mode
 		}
 	}()
 
-	// checkUser, err := s.repo.FindUsers(ctx, &model.FilterFindUser{Email: &in.Username})
-	// if err != nil && !errors.Is(err, sql.ErrNoRows) {
-	// 	return nil, err
-	// }
-
-	// if checkUser != nil {
-	// 	return nil, customerror.ErrEmailExists
-	// }
-
 	userId, err := s.repo.CreateUser(ctx, tx, converter.RegisterRequestToEntity(in, password))
 	if err != nil {
-		// logger.Error(ctx, logCtx, err)
-		return nil, err
-	}
+		if pqErr, ok := err.(*pq.Error); ok {
+			if strings.EqualFold(string(pqErr.Code), "23505") {
+				return nil, customerror.ErrUsernameExists
+			}
+		}
 
-	// TODO: handle error duplicate unique key
+		return nil, fmt.Errorf("%s %w", logCtx, err)
+	}
 
 	accessToken, err := s.generateAccessToken(userId, in.Username)
 	if err != nil {
-		// logger.Error(ctx, logCtx, err)
-		return nil, err
+		return nil, fmt.Errorf("%s %w", logCtx, err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s %w", logCtx, err)
 	}
 
 	return &model.RegisterResponse{
 		Username:    in.Username,
 		Name:        in.Name,
 		AccessToken: accessToken,
+		UserID:      userId,
 	}, nil
 }
 

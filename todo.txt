@@ -14,5 +14,9 @@
 8. unit test
 9. huge refactor? interface segregation? redo unit test
 10.containerized app
+11. swagger / api doc
+
+12. create api with graphql
+13. create api with grpc?
 
 

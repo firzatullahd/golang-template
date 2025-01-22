@@ -13,8 +13,8 @@ type User struct {
 	Username   string    `db:"username"`
 	Password   string    `db:"password"`
 	Name       string    `db:"name"`
-	IdCardNo   string    `db:"id_card_no"`
-	IdcardFile string    `db:"id_card_file"`
+	IdCardNo   *string   `db:"id_card_no"`
+	IdcardFile *string   `db:"id_card_file"`
 	State      UserState `db:"state"`
 
 	CreatedAt time.Time `db:"created_at"`
@@ -44,7 +44,6 @@ func (s UserState) String() string {
 		return ""
 	}
 }
-
 func (s *UserState) UnmarshalJSON(data []byte) error {
 	if len(data) == 0 || string(data) == `""` {
 		return nil
@@ -56,8 +55,12 @@ func (s *UserState) UnmarshalJSON(data []byte) error {
 	}
 
 	switch strings.ToUpper(str) {
-	case "ACTIVATED":
+	case "REGISTERED":
 		*s = UserStateRegistered
+	case "PENDING_VERIFICATION":
+		*s = UserStatePending
+	case "VERIFIED":
+		*s = UserStateVerified
 	case "DELETED":
 		*s = UserStateDeleted
 	default:
@@ -74,7 +77,6 @@ func (s UserState) MarshalJSON() ([]byte, error) {
 func (s UserState) Value() (driver.Value, error) {
 	return s.String(), nil
 }
-
 func (s *UserState) Scan(value interface{}) error {
 	if value == nil {
 		return nil
@@ -90,5 +92,18 @@ func (s *UserState) Scan(value interface{}) error {
 		return errors.New("invalid type")
 	}
 
-	return s.UnmarshalJSON([]byte(`"` + str + `"`))
+	switch strings.ToUpper(str) {
+	case "REGISTERED":
+		*s = UserStateRegistered
+	case "PENDING_VERIFICATION":
+		*s = UserStatePending
+	case "VERIFIED":
+		*s = UserStateVerified
+	case "DELETED":
+		*s = UserStateDeleted
+	default:
+		return errors.New("invalid state")
+	}
+
+	return nil
 }

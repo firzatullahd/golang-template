@@ -1,25 +1,25 @@
 package customerror
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 )
 
 var (
-	ErrEmailExists             = fmt.Errorf("email already exists")
-	ErrValidation              = fmt.Errorf("please use valid email")
-	ErrNotFound                = fmt.Errorf("not found")
-	ErrWrongPassword           = fmt.Errorf("wrong password")
-	ErrUnknown                 = fmt.Errorf("error unknown")
-	ErrUnauthorized            = fmt.Errorf("unauthorized")
-	ErrAlreadyVerified         = fmt.Errorf("user already verified")
-	ErrNoResourceUpdated       = fmt.Errorf("no resource updated")
-	ErrTooManyRequests         = fmt.Errorf("too many requests")
-	ErrInvalidVerificationCode = fmt.Errorf("invalid verification code")
+	ErrUsernameExists          = errors.New("username already exists")
+	ErrValidation              = errors.New("please use valid email")
+	ErrNotFound                = errors.New("not found")
+	ErrWrongPassword           = errors.New("wrong password")
+	ErrUnknown                 = errors.New("error unknown")
+	ErrUnauthorized            = errors.New("unauthorized")
+	ErrAlreadyVerified         = errors.New("user already verified")
+	ErrNoResourceUpdated       = errors.New("no resource updated")
+	ErrTooManyRequests         = errors.New("too many requests")
+	ErrInvalidVerificationCode = errors.New("invalid verification code")
 )
 
 var mapErrorCode = map[error]int{
-	ErrEmailExists:             http.StatusConflict,
+	ErrUsernameExists:          http.StatusConflict,
 	ErrValidation:              http.StatusBadRequest,
 	ErrNotFound:                http.StatusNotFound,
 	ErrWrongPassword:           http.StatusBadRequest,
@@ -30,13 +30,12 @@ var mapErrorCode = map[error]int{
 	ErrInvalidVerificationCode: http.StatusBadRequest,
 }
 
-func ParseError(err error) (code int, err2 error) {
+func ParseError(err error) (int, error) {
 	if err != nil {
-		if errCode, ok := mapErrorCode[err]; ok {
-			code = errCode
-			return code, err2
+		if code, ok := mapErrorCode[err]; ok {
+			return code, err
 		} else {
-			return http.StatusInternalServerError, ErrUnknown
+			return http.StatusInternalServerError, err
 		}
 	}
 	return http.StatusOK, nil

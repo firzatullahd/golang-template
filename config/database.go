@@ -21,8 +21,7 @@ func NewPsqlClient(conf *Config) (*sqlx.DB, error) {
 	}
 
 	if err := conn.Ping(); err != nil {
-		logger.Log.Error("Connection to database failed")
-		return nil, err
+		return nil, fmt.Errorf("Connection to database failed %w", err)
 	}
 
 	logger.Log.Info("Connection to database established")
@@ -41,8 +40,7 @@ func NewRedisClient(ctx context.Context, conf *Config) (*redis.Client, error) {
 	})
 
 	if err := conn.Ping(ctx).Err(); err != nil {
-		logger.Log.Error("Connection to redis failed")
-		return nil, err
+		return nil, fmt.Errorf("Connection to redis failed %w", err)
 	}
 
 	logger.Log.Info("Connection to redis established")

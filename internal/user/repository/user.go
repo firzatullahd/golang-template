@@ -16,7 +16,7 @@ func (r *Repo) CreateUser(ctx context.Context, tx *sqlx.Tx, in entity.User) (uin
 	var id uint64
 
 	sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
-	query, args, err := sq.Insert("users").Columns("username", "password", "name", "state").Values(in.Username, in.Password, in.Name, entity.UserStateRegistered).ToSql()
+	query, args, err := sq.Insert("users").Columns("username", "password", "name", "state").Values(in.Username, in.Password, in.Name, entity.UserStateRegistered).Suffix("RETURNING id").ToSql()
 	if err != nil {
 		return 0, err
 	}
@@ -59,19 +59,14 @@ func (r *Repo) FindUsers(ctx context.Context, in *model.FilterFindUser) ([]entit
 }
 
 func (r *Repo) FindUser(ctx context.Context, in *model.FilterFindUser) (*entity.User, error) {
-	// logCtx := fmt.Sprintf("%T.FindUser", r)
 
 	sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 	queryfind := sq.Select("id", "username", "password", "name", "state", "id_card_no", "id_card_file", "created_at", "updated_at").From("users")
 
-	if in.Username != nil {
-		queryfind = queryfind.Where(squirrel.Eq{"username": in.Username})
-	}
-
 	switch {
 	case in.Username != nil:
-		queryfind = queryfind.Where(squirrel.Eq{"username": in.Username})
-	case len(in.ID) > 0:
+		queryfind = queryfind.Where(squirrel.Eq{"username": *in.Username})
+	case in.ID != nil:
 		queryfind = queryfind.Where(squirrel.Eq{"id": in.ID})
 	}
 
@@ -82,8 +77,7 @@ func (r *Repo) FindUser(ctx context.Context, in *model.FilterFindUser) (*entity.
 
 	var user entity.User
 
-	if err := r.dbRead.QueryRowxContext(ctx, query, args).StructScan(&user); err != nil {
-		// logger.Error(ctx, logCtx, err)
+	if err := r.dbRead.QueryRowxContext(ctx, query, args...).StructScan(&user); err != nil {
 		return nil, err
 	}
 
