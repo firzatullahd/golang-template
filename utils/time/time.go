@@ -16,5 +16,6 @@ func (Time) Now() time.Time {
 func (Time) UntilMidnight() time.Duration {
 	loc, _ := time.LoadLocation("Asia/Jakarta")
 	now := time.Now().In(loc)
-	return time.Duration(time.Until(now.Truncate(24 * time.Hour).Add(24 * time.Hour)).Seconds())
+	midnight := now.Truncate(24 * time.Hour).Add(24 * time.Hour)
+	return time.Until(midnight)
 }

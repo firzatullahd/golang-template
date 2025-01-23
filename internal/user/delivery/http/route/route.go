@@ -2,6 +2,7 @@ package route
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/firzatullahd/golang-template/config"
 	"github.com/firzatullahd/golang-template/internal/user/delivery/http/handler"
@@ -23,14 +24,19 @@ func Serve(conf *config.Config, h *handler.Handler) {
 	userApi := e.Group("/v1/user")
 	userApi.POST("/register", h.Register)
 	userApi.POST("/login", h.Login)
-	userApi.POST("/verification/:username", h.InitialVerification)
-	userApi.POST("/verify/:username/:code", h.Verify)
 
-	_ = e.Group("/v1/", m.Auth())
+	authApi := e.Group("/v1/user", m.Auth)
+
+	authApi.POST("/verification", h.InitialVerification)
+	authApi.POST("/verification/:code", h.Verification)
 
 	// approval verification
-
-	e.Logger.Fatal(e.Start(":" + conf.AppPort))
+	server := &http.Server{
+		Addr:         ":" + conf.AppPort,
+		ReadTimeout:  3600 * time.Second,
+		WriteTimeout: 3600 * time.Second,
+	}
+	e.Logger.Fatal(e.StartServer(server))
 }
 
 func HealthCheck(c echo.Context) error {

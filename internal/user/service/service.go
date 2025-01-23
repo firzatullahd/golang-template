@@ -15,9 +15,8 @@ type Irepository interface {
 	WithTransaction() (*sqlx.Tx, error)
 
 	CreateUser(ctx context.Context, tx *sqlx.Tx, in entity.User) (uint64, error)
-	FindUsers(ctx context.Context, in *model.FilterFindUser) ([]entity.User, error)
-	FindUser(ctx context.Context, in *model.FilterFindUser) (*entity.User, error)
-	UpdateUser(ctx context.Context, tx *sqlx.Tx, userID uint64, in map[string]any) error
+	FindUser(ctx context.Context, filter *model.FilterFindUser) (*entity.User, error)
+	UpdateUser(ctx context.Context, tx *sqlx.Tx, filter *model.FilterFindUser, in map[string]any) error
 }
 
 type IEmailClient interface {

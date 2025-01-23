@@ -12,7 +12,6 @@ import (
 )
 
 func (r *Repo) CreateUser(ctx context.Context, tx *sqlx.Tx, in entity.User) (uint64, error) {
-	// logCtx := fmt.Sprintf("%T.CreateUser", r)
 	var id uint64
 
 	sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
@@ -27,47 +26,16 @@ func (r *Repo) CreateUser(ctx context.Context, tx *sqlx.Tx, in entity.User) (uin
 	return id, nil
 }
 
-func (r *Repo) FindUsers(ctx context.Context, in *model.FilterFindUser) ([]entity.User, error) {
-	// logCtx := fmt.Sprintf("%T.FindUser", r)
-	var users []entity.User
-
-	sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
-	query, args, err := sq.Select("id", "username", "password", "name", "state", "id_card_no", "id_card_file", "created_at", "updated_at").From("users").ToSql()
-	if err != nil {
-		return users, err
-	}
-
-	rows, err := r.dbRead.QueryxContext(ctx, query, args)
-	if err != nil {
-		// logger.Error(ctx, logCtx, err)
-		return users, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var user entity.User
-		err = rows.StructScan(&user)
-		if err != nil {
-			// logger.Error(ctx, logCtx, err)
-			return users, err
-		}
-
-		users = append(users, user)
-	}
-
-	return users, nil
-}
-
-func (r *Repo) FindUser(ctx context.Context, in *model.FilterFindUser) (*entity.User, error) {
+func (r *Repo) FindUser(ctx context.Context, filter *model.FilterFindUser) (*entity.User, error) {
 
 	sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 	queryfind := sq.Select("id", "username", "password", "name", "state", "id_card_no", "id_card_file", "created_at", "updated_at").From("users")
 
 	switch {
-	case in.Username != nil:
-		queryfind = queryfind.Where(squirrel.Eq{"username": *in.Username})
-	case in.ID != nil:
-		queryfind = queryfind.Where(squirrel.Eq{"id": in.ID})
+	case filter.Username != nil:
+		queryfind = queryfind.Where(squirrel.Eq{"username": *filter.Username})
+	case filter.ID != nil:
+		queryfind = queryfind.Where(squirrel.Eq{"id": filter.ID})
 	}
 
 	query, args, err := queryfind.ToSql()
@@ -84,20 +52,24 @@ func (r *Repo) FindUser(ctx context.Context, in *model.FilterFindUser) (*entity.
 	return &user, nil
 }
 
-func (r *Repo) UpdateUser(ctx context.Context, tx *sqlx.Tx, userID uint64, in map[string]any) error {
-	// logCtx := fmt.Sprintf("%T.UpdateUser", r)
-
+func (r *Repo) UpdateUser(ctx context.Context, tx *sqlx.Tx, filter *model.FilterFindUser, in map[string]any) error {
 	in["updated_at"] = time.Now()
-
 	sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
-	query, args, err := sq.Update("users").SetMap(in).Where(squirrel.Eq{"id": userID}).ToSql()
+	q := sq.Update("users").SetMap(in)
+	switch {
+	case filter.Username != nil:
+		q = q.Where(squirrel.Eq{"username": *filter.Username})
+	case filter.ID != nil:
+		q = q.Where(squirrel.Eq{"id": filter.ID})
+	}
+
+	query, args, err := q.ToSql()
 	if err != nil {
 		return err
 	}
 
 	res, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
-		// logger.Error(ctx, logCtx, err)
 		return err
 	}
 

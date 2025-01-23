@@ -11,7 +11,7 @@ type Iservice interface {
 	Login(ctx context.Context, in model.AuthRequest) (*model.AuthResponse, error)
 
 	InitialVerification(ctx context.Context, username string) error
-	Verify(ctx context.Context, username, code string) error
+	Verification(ctx context.Context, username, code string) error
 }
 
 type Handler struct {

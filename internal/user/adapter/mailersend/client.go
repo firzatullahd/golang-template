@@ -30,8 +30,8 @@ func (c *Client) SendEmail(ctx context.Context, input model.EmailPayload) error 
 
 	subject := "OTP"
 	from := mailersendSDK.From{
-		Name:  c.emailfrom,
-		Email: "Firza Playground",
+		Name:  "Firza Playground",
+		Email: c.emailfrom,
 	}
 
 	recipients := []mailersendSDK.Recipient{
@@ -63,7 +63,7 @@ func (c *Client) SendEmail(ctx context.Context, input model.EmailPayload) error 
 		return fmt.Errorf("Send Email failed %w", err)
 	}
 
-	logger.Log.Info("Email sent successfully", resp.Header.Get("X-Message-Id"))
+	logger.Log.Info("Email sent successfully ", resp.Header.Get("X-Message-Id"))
 
 	return nil
 }

@@ -17,6 +17,7 @@ import (
 	customerror "github.com/firzatullahd/golang-template/internal/user/model/error"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -88,12 +89,10 @@ func validateRegister(in *model.RegisterRequest) error {
 }
 
 func (s *Service) Login(ctx context.Context, in model.AuthRequest) (*model.AuthResponse, error) {
-	// logCtx := fmt.Sprintf("%T.Login", u)
 	user, err := s.repo.FindUser(ctx, &model.FilterFindUser{
 		Username: &in.Username,
 	})
 	if err != nil {
-		// logger.Error(ctx, logCtx, err)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, customerror.ErrNotFound
 		}
@@ -101,13 +100,11 @@ func (s *Service) Login(ctx context.Context, in model.AuthRequest) (*model.AuthR
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(in.Password))
 	if err != nil {
-		// logger.Error(ctx, logCtx, err)
 		return nil, customerror.ErrWrongPassword
 	}
 
 	accessToken, err := s.generateAccessToken(user.ID, in.Username)
 	if err != nil {
-		// logger.Error(ctx, logCtx, err)
 		return nil, err
 	}
 
@@ -134,7 +131,6 @@ func (s *Service) generateAccessToken(userId uint64, username string) (string, e
 }
 
 func (s *Service) InitialVerification(ctx context.Context, username string) error {
-
 	user, err := s.repo.FindUser(ctx, &model.FilterFindUser{
 		Username: &username,
 	})
@@ -178,13 +174,9 @@ func (s *Service) InitialVerification(ctx context.Context, username string) erro
 		}
 	}()
 
-	if err := s.repo.UpdateUser(ctx, tx, user.ID, map[string]interface{}{
+	if err := s.repo.UpdateUser(ctx, tx, &model.FilterFindUser{Username: &username}, map[string]interface{}{
 		"state": entity.UserStatePending,
 	}); err != nil {
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
 		return err
 	}
 
@@ -193,6 +185,10 @@ func (s *Service) InitialVerification(ctx context.Context, username string) erro
 		Name:             user.Name,
 		VerificationCode: verificationCode,
 	}); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 
@@ -215,28 +211,38 @@ func (s *Service) generateVerificationCode() (string, error) {
 }
 
 func (s *Service) allowInitialVerification(ctx context.Context, username string) (bool, error) {
-	val, err := s.redisConn.Get(ctx, fmt.Sprintf(model.VerificationCounterPrefix, username)).Int()
-	if err != nil {
+	key := fmt.Sprintf(model.VerificationCounterPrefix, username)
+
+	val, err := s.redisConn.Get(ctx, key).Int()
+	if err != nil && !errors.Is(err, redis.Nil) {
 		return false, err
 	}
 
 	if val == 0 {
-		// set initial counter
-		return true, s.redisConn.Set(ctx, fmt.Sprintf(model.VerificationCounterPrefix, username), 1, s.time.UntilMidnight()).Err()
+		fmt.Println("LALA", s.time.UntilMidnight())
+		err = s.redisConn.Set(ctx, key, 1, s.time.UntilMidnight()).Err()
+		if err != nil {
+			return false, err
+		}
+
+		return true, nil
 	}
 
 	if val >= model.VerificationMaxAttempt {
 		return false, customerror.ErrTooManyRequests
 	}
 
-	// increment counter
-	return true, s.redisConn.Incr(ctx, fmt.Sprintf(model.VerificationCounterPrefix, username)).Err()
+	err = s.redisConn.Incr(ctx, key).Err()
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
-func (s *Service) Verify(ctx context.Context, username, code string) error {
+func (s *Service) Verification(ctx context.Context, username, code string) error {
 
 	val, err := s.redisConn.Get(ctx, fmt.Sprintf(model.VerificationPrefix, username)).Result()
-	if err != nil {
+	if err != nil && !errors.Is(err, redis.Nil) {
 		return err
 	}
 
@@ -244,9 +250,26 @@ func (s *Service) Verify(ctx context.Context, username, code string) error {
 		return customerror.ErrInvalidVerificationCode
 	}
 
+	tx, err := s.repo.WithTransaction()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := s.repo.UpdateUser(ctx, tx, &model.FilterFindUser{Username: &username}, map[string]interface{}{
+		"state": entity.UserStateVerified,
+	}); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
 	return nil
-}
-
-func (s *Service) DoKyc(ctx context.Context) {
-
 }
