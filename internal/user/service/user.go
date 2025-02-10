@@ -22,19 +22,18 @@ import (
 )
 
 func (s *Service) Register(ctx context.Context, in model.RegisterRequest) (*model.RegisterResponse, error) {
-	logCtx := fmt.Sprintf("%T.Register", s)
 
 	if err := validateRegister(&in); err != nil {
-		return nil, fmt.Errorf("%s %w", logCtx, err)
+		return nil, err
 	}
 
 	password, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, fmt.Errorf("%s %w", logCtx, err)
+		return nil, err
 	}
 	tx, err := s.repo.WithTransaction()
 	if err != nil {
-		return nil, fmt.Errorf("%s %w", logCtx, err)
+		return nil, err
 	}
 
 	defer func() {
@@ -51,16 +50,16 @@ func (s *Service) Register(ctx context.Context, in model.RegisterRequest) (*mode
 			}
 		}
 
-		return nil, fmt.Errorf("%s %w", logCtx, err)
+		return nil, err
 	}
 
 	accessToken, err := s.generateAccessToken(userId, in.Username)
 	if err != nil {
-		return nil, fmt.Errorf("%s %w", logCtx, err)
+		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("%s %w", logCtx, err)
+		return nil, err
 	}
 
 	return &model.RegisterResponse{
@@ -74,15 +73,15 @@ func (s *Service) Register(ctx context.Context, in model.RegisterRequest) (*mode
 func validateRegister(in *model.RegisterRequest) error {
 	_, err := mail.ParseAddress(in.Username)
 	if err != nil {
-		return customerror.ErrValidation
+		return customerror.ErrValidationUsername
 	}
 
 	if len(in.Name) < 5 || len(in.Name) > 50 {
-		return customerror.ErrValidation
+		return customerror.ErrValidationName
 	}
 
 	if len(in.Password) < 5 || len(in.Password) > 15 {
-		return customerror.ErrValidation
+		return customerror.ErrValidationPassword
 	}
 
 	return nil
@@ -130,7 +129,7 @@ func (s *Service) generateAccessToken(userId uint64, username string) (string, e
 	return token.SignedString([]byte(s.conf.JWTSecretKey))
 }
 
-func (s *Service) InitialVerification(ctx context.Context, username string) error {
+func (s *Service) InitiateVerification(ctx context.Context, username string) error {
 	user, err := s.repo.FindUser(ctx, &model.FilterFindUser{
 		Username: &username,
 	})
@@ -138,7 +137,7 @@ func (s *Service) InitialVerification(ctx context.Context, username string) erro
 		return err
 	}
 
-	allowed, err := s.allowInitialVerification(ctx, username)
+	allowed, err := s.allowInitiateVerification(ctx, username)
 	if err != nil {
 		return err
 	}
@@ -210,7 +209,7 @@ func (s *Service) generateVerificationCode() (string, error) {
 	return fmt.Sprintf("%06d", otp), nil
 }
 
-func (s *Service) allowInitialVerification(ctx context.Context, username string) (bool, error) {
+func (s *Service) allowInitiateVerification(ctx context.Context, username string) (bool, error) {
 	key := fmt.Sprintf(model.VerificationCounterPrefix, username)
 
 	val, err := s.redisConn.Get(ctx, key).Int()

@@ -11,6 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+//go:generate mockgen -source=service.go -package=mock -destination=mock/mock.go
 type Irepository interface {
 	WithTransaction() (*sqlx.Tx, error)
 

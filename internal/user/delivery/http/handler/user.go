@@ -41,14 +41,14 @@ func (h *Handler) Login(c echo.Context) error {
 	return response.SuccessResponse(c, http.StatusOK, resp, nil)
 }
 
-func (h *Handler) InitialVerification(c echo.Context) error {
+func (h *Handler) InitiateVerification(c echo.Context) error {
 	ctx := c.Request().Context()
 	data, ok := c.Get(constant.UserDataKey).(model.UserData)
 	if !ok {
 		return response.ErrorResponse(c, http.StatusUnauthorized, nil)
 	}
 
-	err := h.Service.InitialVerification(ctx, data.Username)
+	err := h.Service.InitiateVerification(ctx, data.Username)
 	if err != nil {
 		code, err := customerror.ParseError(err)
 		return response.ErrorResponse(c, code, err)

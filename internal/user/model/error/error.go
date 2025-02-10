@@ -7,7 +7,9 @@ import (
 
 var (
 	ErrUsernameExists          = errors.New("username already exists")
-	ErrValidation              = errors.New("please use valid email")
+	ErrValidationUsername      = errors.New("please use valid email")
+	ErrValidationName          = errors.New("name must be between 5-50 characters")
+	ErrValidationPassword      = errors.New("password must be between 5-15 characters")
 	ErrNotFound                = errors.New("not found")
 	ErrWrongPassword           = errors.New("wrong password")
 	ErrUnknown                 = errors.New("error unknown")
@@ -20,7 +22,9 @@ var (
 
 var mapErrorCode = map[error]int{
 	ErrUsernameExists:          http.StatusConflict,
-	ErrValidation:              http.StatusBadRequest,
+	ErrValidationUsername:      http.StatusBadRequest,
+	ErrValidationName:          http.StatusBadRequest,
+	ErrValidationPassword:      http.StatusBadRequest,
 	ErrNotFound:                http.StatusNotFound,
 	ErrWrongPassword:           http.StatusBadRequest,
 	ErrUnknown:                 http.StatusInternalServerError,

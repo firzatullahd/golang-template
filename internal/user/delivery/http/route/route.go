@@ -27,7 +27,7 @@ func Serve(conf *config.Config, h *handler.Handler) {
 
 	authApi := e.Group("/v1/user", m.Auth)
 
-	authApi.POST("/verification", h.InitialVerification)
+	authApi.POST("/verification", h.InitiateVerification)
 	authApi.POST("/verification/:code", h.Verification)
 
 	// approval verification
